@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Recommendation Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-50">
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-slate-800">Recommendation Engine</h1>
+            <div class="flex items-center gap-4">
+                <span id="userEmail" class="text-slate-600"></span>
+                <button id="logoutBtn" class="text-slate-600 hover:text-slate-800 font-medium">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar & Main Content -->
+    <div class="flex h-[calc(100vh-70px)]">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r border-slate-200 p-6">
+            <nav class="space-y-2">
+                <a href="#" class="nav-link active block px-4 py-2 rounded-lg bg-blue-50 text-blue-600 font-medium"
+                    data-page="dashboard">
+                    📊 Dashboard
+                </a>
+                <a href="#" class="nav-link block px-4 py-2 rounded-lg text-slate-700 hover:bg-slate-50"
+                    data-page="items">
+                    📦 Items
+                </a>
+                <a href="#" class="nav-link block px-4 py-2 rounded-lg text-slate-700 hover:bg-slate-50"
+                    data-page="stats">
+                    📈 Statistics
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-auto p-8">
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page-content">
+                <h2 class="text-3xl font-bold text-slate-800 mb-8">Welcome to Your Dashboard</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="text-slate-600 text-sm font-medium mb-2">Total Items</div>
+                        <div id="totalItems" class="text-4xl font-bold text-slate-800">0</div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="text-slate-600 text-sm font-medium mb-2">Total Interactions</div>
+                        <div id="totalInteractions" class="text-4xl font-bold text-slate-800">0</div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="text-slate-600 text-sm font-medium mb-2">Active Users</div>
+                        <div id="activeUsers" class="text-4xl font-bold text-slate-800">0</div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="p-6 border-b border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-800">Recent Activity</h3>
+                    </div>
+                    <div id="activityList" class="divide-y divide-slate-200">
+                        <div class="p-6 text-slate-500 text-center">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Page -->
+            <div id="items-page" class="page-content hidden">
+                <h2 class="text-3xl font-bold text-slate-800 mb-8">Manage Items</h2>
+
+                <div class="mb-6">
+                    <button id="addItemBtn"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">
+                        + Add Item
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table id="itemsTable" class="w-full">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-slate-700">Item ID</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-slate-700">Created</th>
+                                <th class="px-6 py-3 text-right text-sm font-semibold text-slate-700">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody" class="divide-y divide-slate-200">
+                            <tr>
+                                <td colspan="4" class="px-6 py-8 text-center text-slate-500">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Statistics Page -->
+            <div id="stats-page" class="page-content hidden">
+                <h2 class="text-3xl font-bold text-slate-800 mb-8">Statistics</h2>
+
+                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-4">System Health</h3>
+                    <div id="statsContent" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <div class="text-slate-600 mb-2">API Status</div>
+                            <div id="apiStatus" class="text-lg font-semibold">Checking...</div>
+                        </div>
+                        <div>
+                            <div class="text-slate-600 mb-2">Embedding Service Status</div>
+                            <div id="embeddingStatus" class="text-lg font-semibold">Checking...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/assets/app.js"></script>
+    <script>
+        // Check authentication
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/';
+            }
+
+            // Set email from local storage or fetch from API
+            const userEmail = localStorage.getItem('userEmail') || 'User';
+            document.getElementById('userEmail').textContent = userEmail;
+
+            // Setup navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const page = link.dataset.page;
+                    switchPage(page);
+
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active', 'bg-blue-50', 'text-blue-600'));
+                    link.classList.add('active', 'bg-blue-50', 'text-blue-600');
+                });
+            });
+
+            // Setup logout
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userEmail');
+                window.location.href = '/';
+            });
+
+            // Load initial data
+            loadDashboardData();
+        });
+
+        function switchPage(page) {
+            document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(page + '-page').classList.remove('hidden');
+
+            if (page === 'items') {
+                loadItems();
+            } else if (page === 'stats') {
+                loadStats();
+            }
+        }
+
+        async function loadDashboardData() {
+            try {
+                const token = localStorage.getItem('token');
+                // This is a placeholder - implement actual API call
+                console.log('Loading dashboard data...');
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        async function loadItems() {
+            console.log('Loading items...');
+        }
+
+        async function loadStats() {
+            console.log('Loading statistics...');
+        }
+    </script>
+</body>
+
+</html>

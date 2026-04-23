@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+    html {
+        @apply scroll-smooth;
+    }
+}
+
+/* Custom components */
+@layer components {
+    .btn-primary {
+        @apply btn btn-primary;
+    }
+
+    .btn-secondary {
+        @apply btn btn-secondary;
+    }
+
+    .card-base {
+        @apply card bg-base-100 shadow-xl;
+    }
+}

@@ -1,0 +1,11 @@
+D:\Susume\api-service\src\test\java\com\susume\recommendation\integration\InteractionRecordingIntegrationTest.java
+D:\Susume\api-service\src\test\java\com\susume\recommendation\service\ItemServiceTest.java
+D:\Susume\api-service\src\test\java\com\susume\recommendation\integration\RecommendationFlowIntegrationTest.java
+D:\Susume\api-service\src\test\java\com\susume\recommendation\util\VectorUtilsTest.java
+D:\Susume\api-service\src\test\java\com\susume\recommendation\service\RecommendationServiceTest.java
+D:\Susume\api-service\src\test\java\com\susume\recommendation\integration\IntegrationTestBase.java
+D:\Susume\api-service\src\test\java\com\susume\recommendation\util\MetadataConcatenatorTest.java
+D:\Susume\api-service\src\test\java\com\susume\recommendation\filter\ApiKeyFilterTest.java
+D:\Susume\api-service\src\test\java\com\susume\recommendation\integration\ColdStartIntegrationTest.java
+D:\Susume\api-service\src\test\java\com\susume\recommendation\integration\TenantIsolationIntegrationTest.java
+D:\Susume\api-service\src\test\java\com\susume\recommendation\integration\ItemLifecycleIntegrationTest.java
