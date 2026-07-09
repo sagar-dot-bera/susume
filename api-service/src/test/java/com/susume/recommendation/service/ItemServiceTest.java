@@ -29,7 +29,7 @@ class ItemServiceTest {
 
     @BeforeEach
     void setUp() {
-        itemService = new ItemService(itemRepository, embeddingServiceClient);
+        // itemService = new ItemService(itemRepository, embeddingServiceClient);
         tenantId = UUID.randomUUID();
     }
 

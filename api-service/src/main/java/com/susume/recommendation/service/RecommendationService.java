@@ -9,6 +9,7 @@ import com.susume.recommendation.repository.ItemRepository;
 import com.susume.recommendation.util.VectorUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -47,16 +48,7 @@ public class RecommendationService {
         this.maxRecommendationLimit = maxRecommendationLimit;
     }
 
-    /**
-     * Get personalized recommendations for a user.
-     * Falls back to trending if user has no interaction history.
-     *
-     * @param tenantId       tenant UUID
-     * @param externalUserId external user identifier
-     * @param limit          number of recommendations to return (capped at max
-     *                       limit)
-     * @return RecommendationResponse with strategy indicated
-     */
+    @Cacheable(value = "recommendation", key = "#tenantId" + "#externalUserId")
     public RecommendationResponse getRecommendations(UUID tenantId, String externalUserId, int limit) {
         int cappedLimit = Math.min(limit, maxRecommendationLimit);
 

@@ -57,12 +57,7 @@ public class AuthController {
         }
     }
 
-    /**
-     * Refresh token endpoint.
-     * POST /api/v1/auth/refresh
-     * Body: { "token": "..." }
-     * Response: { "token": "...", "expiresAt": "..." }
-     */
+
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         try {

@@ -6,6 +6,8 @@ import com.susume.recommendation.entity.InteractionType;
 import com.susume.recommendation.repository.InteractionRepository;
 import com.susume.recommendation.repository.ItemRepository;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +37,7 @@ public class InteractionService {
     /**
      * Record a new interaction.
      */
+    @CacheEvict(value = "recommendation", key = "#tenantId + ':' #externalUserId")
     @Transactional
     public Interaction recordInteraction(UUID tenantId, String externalUserId,
             String externalItemId, String interactionTypeStr,

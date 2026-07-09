@@ -45,6 +45,10 @@ public class Item {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "embedding_status", nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    private EmbeddingStatus embeddingStatus;
+
     @PrePersist
     protected void onCreate() {
         if (id == null) {

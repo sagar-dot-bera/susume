@@ -1,9 +1,12 @@
 package com.susume.recommendation.service;
 
 import com.susume.recommendation.client.EmbeddingServiceClient;
+import com.susume.recommendation.dto.ItemCreatedEvent;
 import com.susume.recommendation.dto.ItemDetailResponse;
+import com.susume.recommendation.entity.EmbeddingStatus;
 import com.susume.recommendation.entity.Item;
 import com.susume.recommendation.exception.EmbeddingServiceException;
+import com.susume.recommendation.exception.FailedToFindItemException;
 import com.susume.recommendation.repository.ItemRepository;
 import com.susume.recommendation.util.MetadataConcatenator;
 import lombok.extern.slf4j.Slf4j;
@@ -27,10 +30,13 @@ public class ItemService {
 
     private final ItemRepository itemRepository;
     private final EmbeddingServiceClient embeddingServiceClient;
+    private final ItemEventPublisher itemEventPublisher;
 
-    public ItemService(ItemRepository itemRepository, EmbeddingServiceClient embeddingServiceClient) {
+    public ItemService(ItemRepository itemRepository, EmbeddingServiceClient embeddingServiceClient,
+            ItemEventPublisher itemEventPublisher) {
         this.itemRepository = itemRepository;
         this.embeddingServiceClient = embeddingServiceClient;
+        this.itemEventPublisher = itemEventPublisher;
     }
 
     /**
@@ -48,25 +54,56 @@ public class ItemService {
             throw new IllegalArgumentException("Item with this external ID already exists for this tenant");
         }
 
-        // Concatenate metadata for embedding
-        String concatenated = MetadataConcatenator.concatenate(metadata);
-
-        // Call embedding service synchronously
-        float[] embedding = embeddingServiceClient.getEmbedding(concatenated);
-
         // Create and save item
         Item item = Item.builder()
                 .tenantId(tenantId)
                 .externalItemId(externalItemId)
                 .metadata(metadata)
-                .embedding(embedding)
+                .embedding(new float[0])
                 .status("ACTIVE")
+                .embeddingStatus(EmbeddingStatus.PENDING)
                 .build();
 
         Item savedItem = itemRepository.save(item);
         log.info("Item created: {} for tenant: {}", savedItem.getId(), tenantId);
 
+        itemEventPublisher
+                .publish(new ItemCreatedEvent(savedItem.getId().toString(), savedItem.getTenantId().toString()));
+
         return savedItem;
+    }
+
+    public Item fetchItemById(String id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Item id cannot be null");
+        }
+
+        return itemRepository.findById(UUID.fromString(id)).orElseThrow(
+                () -> {
+                    throw new FailedToFindItemException(id);
+                });
+
+    }
+
+    public Item updateEmbedding(String id, EmbeddingStatus embeddingStatus, float[] embedding) {
+
+        if (id == null) {
+            throw new IllegalArgumentException("id cannot be null");
+        }
+
+        if (embeddingStatus == null) {
+            throw new IllegalArgumentException("embeddingStatus cannot be null");
+        }
+
+        if (embedding == null) {
+            throw new IllegalArgumentException("embedding cannot be null");
+        }
+        Item item = fetchItemById(id);
+
+        item.setEmbedding(embedding);
+        item.setEmbeddingStatus(embeddingStatus);
+
+        return itemRepository.save(item);
     }
 
     /**

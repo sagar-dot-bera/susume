@@ -33,6 +33,8 @@ public class Interaction {
     @Enumerated(EnumType.STRING)
     private InteractionType interactionType;
 
+    
+
     @Column(nullable = false)
     private Instant timestamp;
 
