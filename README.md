@@ -1,320 +1,208 @@
-# Susume - Multi-Tenant SaaS Recommendation Engine
+# Susume - Multi-Tenant Recommendation Engine
 
-A scalable, production-ready recommendation engine built as a multi-tenant SaaS platform. Leverages semantic embeddings and vector search to deliver intelligent, personalized recommendations for your users.
+[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue.svg)](https://www.postgresql.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688.svg)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-blue.svg)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://www.docker.com/)
 
-## Features
+Susume is a full-stack SaaS recommendation platform that delivers personalized and trending recommendations in real time. It combines:
 
-- **Multi-Tenant Architecture**: Complete tenant isolation with database-level scoping
-- **Semantic Search**: Advanced text embedding using sentence transformers
-- **Vector Database**: PostgreSQL with pgvector extension for efficient similarity search
-- **RESTful API**: Comprehensive API for managing items, interactions, and recommendations
-- **JWT Authentication**: Secure token-based authentication for API access
-- **Dashboard**: HTML + Tailwind CSS web interface for administration and monitoring
-- **Health Checks**: Built-in health endpoints and monitoring capabilities
-- **Containerized**: Docker and Docker Compose for easy deployment
+- multi-tenant isolation
+- behavioral signals (view, click, like, purchase)
+- semantic embeddings (Sentence Transformers)
+- vector search in PostgreSQL
+
+The goal of this project was to build a production-style recommendation engine with clear service boundaries, async processing, and an operator-friendly deployment model.
+
+## Why This Project
+
+Most recommendation demos stop at "model inference." Susume covers the full product lifecycle:
+
+- secure tenant onboarding and access control
+- item ingestion and asynchronous embedding generation
+- interaction tracking and strategy-based recommendation retrieval
+- dashboard and API surfaces for both business and engineering users
+
+## Core Capabilities
+
+- Multi-tenant architecture with tenant-aware request context and data access
+- API key authentication for public API consumers and JWT auth for dashboard users
+- Vector-based personalization using cosine similarity over dense embeddings
+- Cold-start fallback to trending strategy when user history is sparse
+- Asynchronous embedding pipeline using RabbitMQ between backend and embedding service
+- Redis-backed caching for low-latency repeated access patterns
+- Flyway migrations for schema versioning and reproducible database setup
+
+## Architecture
+
+```mermaid
+flowchart LR
+    C[Client Apps / Dashboard] -->|JWT or X-API-KEY| B[Spring Boot Backend]
+    B -->|JPA + SQL| P[(PostgreSQL 17 + pgvector)]
+    B -->|publish item events| Q[(RabbitMQ)]
+    Q -->|consume| B
+    B -->|/embed| E[FastAPI Embedding Service]
+    B -->|cache| R[(Redis)]
+```
+
+### Recommendation Flow
+
+1. An item is created or updated in the backend.
+2. The item text payload is sent to the embedding service (through the async workflow).
+3. The embedding vector is stored in PostgreSQL.
+4. On recommendation request, user interactions are aggregated into a preference vector.
+5. Candidate items are scored by cosine similarity and ranked.
+6. If the user has insufficient history, the system returns trending items.
+
+Similarity scoring uses:
+
+$$
+    score(u, i) = \frac{u \cdot i}{\|u\|\|i\|}
+$$
 
 ## Tech Stack
 
+- Backend: Java 17, Spring Boot 3.2, Spring Security, Spring Data JPA, Flyway
+- Database: PostgreSQL 17, pgvector
+- Embedding Service: FastAPI, sentence-transformers (all-MiniLM-L6-v2)
+- Messaging + Cache: RabbitMQ, Redis
+- Frontend: React 19, TypeScript 6, Vite, Tailwind CSS
+- DevOps: Docker, Docker Compose
+
+## Repository Structure
+
+```text
+.
+|- backend/             # Spring Boot API
+|- embedding-service/   # FastAPI embedding microservice
+|- frontend/            # React + TypeScript dashboard
+|- docker-compose.yml   # Local multi-service orchestration
+|- TESTING_IMPLEMENTATION_SUMMARY.md
+```
+
+## API Surface (High Level)
+
+### Authentication and User Lifecycle
+
+- `POST /api/v1/auth/register-admin`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/logout`
+- `POST /api/v1/auth/logout-all`
+- `GET /api/v1/auth/verify-email`
+- `POST /api/v1/auth/resend-verification`
+- `POST /api/v1/auth/forgot-password`
+- `POST /api/v1/auth/reset-password`
+
+### Tenant Dashboard and API Keys
+
+- `GET /api/v1/dashboard/tenant`
+- `GET /api/v1/dashboard/stats`
+- `POST /api/v1/api-keys`
+- `GET /api/v1/api-keys`
+- `GET /api/v1/api-keys/{id}`
+- `DELETE /api/v1/api-keys/{id}`
+
+### Catalog, Interactions, Recommendations
+
+- `POST /api/v1/items`
+- `GET /api/v1/items`
+- `PUT /api/v1/items/{externalItemId}`
+- `DELETE /api/v1/items/{externalItemId}`
+- `POST /api/v1/interactions`
+- `GET /api/v1/interactions/history/`
+- `GET /api/v1/recommendations`
+- `GET /api/v1/recommendations/trending`
+
+## Local Setup
+
+### Prerequisites
+
+- Docker Desktop (or Docker Engine + Compose)
+- Java 17 and Maven (for backend local run)
+- Node.js 18+ (for frontend local run)
+- Python 3.10+ (for embedding service local run)
+
+### 1. Configure Environment
+
+Create or update a `.env` file in the repo root. At minimum, define:
+
+```env
+POSTGRES_DB=susume
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_VOLUME_SOURCE=./docker-data/postgres
+
+EMBEDDING_SOURCE_VOLUME_SOURCE=./docker-data/huggingface
+
+RABBITMQ_USERNAME=guest
+RABBITMQ_PASSWORD=guest
+
+JWT_SECRET=replace-with-long-random-secret
+PRIVATE_KEY_PATH=/run/secrets/private.pem
+PUBLIC_KEY_PATH=/run/secrets/public.pem
+MAIL_PASSWORD=replace-mail-password
+```
+
+### 2. Run Everything with Docker Compose
+
+```bash
+docker compose up -d --build
+```
+
+### 3. Service Endpoints
+
+- Backend API: `http://localhost:8080`
+- Embedding service health: `http://localhost:8001/health`
+- RabbitMQ management: `http://localhost:15672`
+- Frontend: `http://localhost`
+- PostgreSQL: `localhost:5433`
+
+## Development Workflow
+
 ### Backend
-- **Framework**: Spring Boot 3.2
-- **Language**: Java 17
-- **Build Tool**: Maven
-- **Security**: Spring Security with JWT (JJWT)
-- **ORM**: Spring Data JPA + Hibernate
-- **Database**: PostgreSQL 15 with pgvector extension
-- **Migrations**: Flyway
-- **API Documentation**: Spring Boot Actuator
 
-### Embedding Service
-- **Framework**: FastAPI
-- **Language**: Python 3
-- **ML Model**: Sentence Transformers (all-MiniLM-L6-v2)
-- **Server**: Uvicorn
-
-### Frontend
-- **Markup**: HTML5
-- **Styling**: Tailwind CSS
-- **Hosting**: Spring Boot static resources
-
-### DevOps
-- **Containerization**: Docker
-- **Orchestration**: Docker Compose
-- **Volumes**: Persistent storage for PostgreSQL and HuggingFace model cache
-
-## Prerequisites
-
-- **Docker** and **Docker Compose** (recommended for local development)
-- **Java 17** (if running without Docker)
-- **Python 3.8+** (if running embedding service standalone)
-- **PostgreSQL 15** (if running without Docker)
-
-## Getting Started
-
-### Option 1: Using Docker Compose (Recommended)
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd Susume
-   ```
-
-2. **Start the entire stack**
-   ```bash
-   cd infra
-   docker-compose up -d
-   ```
-
-3. **Verify services are healthy**
-   ```bash
-   docker ps
-   docker-compose logs -f
-   ```
-
-4. **Access the application**
-   - API Server: http://localhost:8082
-   - Embedding Service: http://localhost:8001
-   - PostgreSQL: localhost:5433
-
-### Option 2: Manual Setup
-
-#### Database Setup
 ```bash
-# Install PostgreSQL 15 with pgvector extension
-# Create database and user
-psql -U postgres -c "CREATE DATABASE recommendation_engine;"
-psql -U postgres -c "CREATE USER sagar WITH PASSWORD 'Denji@0086';"
-psql -U postgres -d recommendation_engine -c "GRANT ALL PRIVILEGES ON DATABASE recommendation_engine TO sagar;"
-psql -U postgres -d recommendation_engine -c "CREATE EXTENSION IF NOT EXISTS vector;"
-```
-
-#### Embedding Service
-```bash
-cd embedding-service
-pip install -r requirements.txt
-export MODEL_NAME=all-MiniLM-L6-v2
-python main.py
-```
-
-#### API Service
-```bash
-cd api-service
-export DATABASE_URL=jdbc:postgresql://localhost:5432/recommendation_engine
-export DATABASE_USERNAME=sagar
-export DATABASE_PASSWORD=Denji@0086
-export EMBEDDING_SERVICE_URL=http://localhost:8001
-export JWT_SECRET=your-secret-key-here
-mvn clean install
+cd backend
 mvn spring-boot:run
 ```
 
-## Project Structure
+### Frontend
 
-```
-Susume/
-├── api-service/                 # Spring Boot backend application
-│   ├── src/main/java/
-│   │   └── com/susume/recommendation/
-│   │       ├── client/          # External service clients
-│   │       ├── config/          # Configuration classes
-│   │       ├── controller/      # REST endpoints
-│   │       ├── dto/             # Data transfer objects
-│   │       ├── entity/          # JPA entities
-│   │       ├── exception/       # Custom exceptions
-│   │       ├── filter/          # Security filters
-│   │       ├── repository/      # Data access layer
-│   │       ├── service/         # Business logic
-│   │       └── util/            # Utility classes
-│   ├── src/main/resources/
-│   │   ├── db/migration/        # Flyway migrations
-│   │   ├── static/              # HTML/CSS/JS dashboard
-│   │   └── application.properties
-│   └── pom.xml
-│
-├── embedding-service/           # Python FastAPI embedding service
-│   ├── main.py                  # FastAPI application
-│   ├── requirements.txt         # Python dependencies
-│   └── Dockerfile
-│
-├── infra/
-│   └── docker-compose.yml       # Container orchestration
-│
-├── docs/                        # Documentation
-├── docker-data/                 # Persistent volumes
-│   ├── postgres/                # PostgreSQL data
-│   └── huggingface/             # Model cache
-│
-└── README.md
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-## API Endpoints
+### Embedding Service
 
-### Authentication
-- `POST /api/auth/login` - Authenticate and receive JWT token
-- `POST /api/auth/validate` - Validate JWT token
-
-### Items Management
-- `POST /api/items` - Create a new item
-- `GET /api/items` - List all items (tenant-scoped)
-- `GET /api/items/{id}` - Get item details
-- `PUT /api/items/{id}` - Update item
-- `DELETE /api/items/{id}` - Delete item
-
-### Recommendations
-- `POST /api/recommendations` - Generate recommendations
-- `GET /api/recommendations/{id}` - Get recommendation details
-
-### Interactions
-- `POST /api/interactions` - Record user interaction
-- `GET /api/interactions` - List interactions (tenant-scoped)
-
-### Health & Status
-- `GET /actuator/health` - Application health check
-- `GET /actuator/metrics` - Application metrics
-
-## Configuration
-
-### Environment Variables
-
-#### API Service
-```env
-# Database
-DATABASE_URL=jdbc:postgresql://localhost:5432/recommendation_engine
-DATABASE_USERNAME=sagar
-DATABASE_PASSWORD=your-password
-
-# JWT
-JWT_SECRET=your-very-secret-key-minimum-32-characters
-JWT_EXPIRY_HOURS=24
-
-# Embedding Service
-EMBEDDING_SERVICE_URL=http://localhost:8001
-EMBEDDING_MODEL_NAME=all-MiniLM-L6-v2
-
-# API Limits
-MAX_RECOMMENDATION_LIMIT=50
+```bash
+cd embedding-service
+pip install -r requirements.txt
+uvicorn main:app --reload --host 0.0.0.0 --port 8001
 ```
-
-#### Embedding Service
-```env
-MODEL_NAME=all-MiniLM-L6-v2
-```
-
-> **Security**: Never commit secrets to version control. Use environment variables or a secrets manager in production.
 
 ## Testing
 
-### Run All Tests
+Run backend tests:
+
 ```bash
-cd api-service
+cd backend
 mvn test
 ```
 
-### Run Specific Test Suite
-```bash
-mvn test -Dtest=RecommendationServiceTest
-```
+For implementation details and test coverage summary, see `TESTING_IMPLEMENTATION_SUMMARY.md`.
 
-### Test Coverage
-```bash
-mvn test jacoco:report
-```
+## Highlights for Recruiters
 
-Test results are available in `target/surefire-reports/`
-
-## Database Schema
-
-The recommendation engine uses the following key entities:
-
-- **Tenants**: Isolated customer environments
-- **Items**: Products/content to be recommended
-- **Users**: System users within a tenant
-- **Interactions**: User-item interactions (views, clicks, purchases)
-- **Embeddings**: Vector representations of items
-- **Recommendations**: Generated recommendations with scoring
-
-All tables include `tenant_id` for multi-tenant isolation.
-
-## Docker Compose Services
-
-The `docker-compose.yml` orchestrates three services:
-
-| Service | Image | Port | Purpose |
-|---------|-------|------|---------|
-| `postgres` | pgvector/pgvector:pg15 | 5433 | Vector database |
-| `embedding` | api-service/embedding-service | 8001 | Text embedding API |
-| `api` | api-service/api-service | 8082 | Main REST API |
-
-Health checks ensure services are ready before dependent services start.
-
-## Security Considerations
-
-- **JWT Authentication**: All API endpoints require valid JWT tokens
-- **Tenant Isolation**: Database queries are scoped by `tenant_id`
-- **Password Hashing**: User passwords are hashed using bcrypt
-- **CORS**: Configure CORS headers for frontend access
-- **SQL Injection**: Protected through parameterized queries
-- **Secrets Management**: Store sensitive data in environment variables, never in code
-
-## Performance Tuning
-
-- **Vector Search**: Leverage pgvector indexes for fast similarity search
-- **Connection Pooling**: HikariCP for efficient database connections
-- **Caching**: Spring Cache abstraction for reducing database queries
-- **Async Processing**: Consider async endpoints for long-running operations
-
-## Contributing
-
-1. Create a feature branch: `git checkout -b feature/your-feature`
-2. Commit changes: `git commit -am 'Add your feature'`
-3. Push to branch: `git push origin feature/your-feature`
-4. Submit a pull request
-
-See `.agent/workflows/` for automated development workflows and best practices.
-
-## Workflows
-
-The project includes automated development workflows in `.agent/workflows/`:
-- `recommendation-engine.md` - Core recommendation engine implementation
-
-Follow these workflows when implementing new features to maintain consistency and best practices.
-
-## Troubleshooting
-
-### PostgreSQL Connection Issues
-- Verify container is running: `docker ps | grep postgres`
-- Check credentials match in `docker-compose.yml`
-- Ensure port 5433 is not already in use
-
-### Embedding Service Not Responding
-- Check logs: `docker logs recommendation_embedding`
-- Verify HuggingFace cache volume is writable
-- First startup may take 5+ minutes to download the model
-
-### API Service Fails to Start
-- Verify database is healthy: `docker logs recommendation_postgres`
-- Check environment variables are set correctly
-- Review logs: `docker logs recommendation_api`
-
-## Support
-
-For issues, questions, or suggestions:
-1. Check existing issues on GitHub
-2. Review logs: `docker-compose logs -f <service-name>`
-3. Consult the workflow documentation in `.agent/workflows/`
+- Designed and implemented a production-style, multi-service recommendation architecture
+- Built end-to-end personalization flow from event ingestion to ranked retrieval
+- Applied practical security patterns (API keys + JWT), async messaging, and caching
+- Delivered a complete full-stack product with backend APIs, embedding service, and admin dashboard
 
 ## License
 
-[Your License Here]
-
-## Acknowledgments
-
-Built with:
-- Spring Boot and Spring Data JPA
-- Sentence Transformers and HuggingFace
-- PostgreSQL and pgvector
-- FastAPI and Uvicorn
-- Docker and Docker Compose
-
----
-
-**Happy recommending!**
+This project is licensed under the MIT License.

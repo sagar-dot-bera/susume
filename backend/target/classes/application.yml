@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: susume
+  datasource:
+    url: jdbc:postgresql://localhost:5433/recommendation_engine
+    username: sagar
+    password: Denji@0086
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: anveshak.noreply@gmail.com
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+  data:
+    redis:
+      host: redis
+      port: 6379
+      repositories:
+        enabled: false 
+
+  cache:
+    type: redis
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+jwt:
+  secret: "cG9hc2Qyazg4OWFzZGZoamtsc2E5ODc2N2FzZGZoamtsc2E5"
+  expiration: 3600000
+  private-key-file: 'C:\Users\beras\keys\private.pem'
+  public-key-file: 'C:\Users\beras\keys\public.pem'
+
+app:
+  mail:
+    from: anveshak.noreply@gmail.com
+  base-url: http://localhost:8080
+

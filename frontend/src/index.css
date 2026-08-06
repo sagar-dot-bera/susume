@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-display: 'Anton', sans-serif;
+
+  --color-brand-primary: #202549;
+  --color-brand-primary-hover: #2C3261;
+  --color-brand-secondary: #E63963;
+  --color-brand-secondary-hover: #D72C57;
+  --color-brand-accent: #F2C94C;
+  --color-brand-accent-hover: #D9B23F;
+
+  --color-bg-base: #F5F3EC;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #E9E6DD;
+  --color-text-primary: #2A2A2A;
+  --color-text-secondary: #6B6B6B;
+  --color-text-muted: #9A9A9A;
+
+  --shadow-hard: 4px 4px 0px 0px #202549;
+  --shadow-hard-lg: 8px 8px 0px 0px #202549;
+  --shadow-hard-xl: 12px 12px 0px 0px #202549;
+  --shadow-hard-sm: 2px 2px 0px 0px #202549;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg-base);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+  
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-surface-alt);
+  border: 2px solid var(--color-brand-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-brand-primary);
+  border: 2px solid var(--color-surface-alt);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-primary-hover);
+}
+
+/* Micro-animations and transitions */
+.btn-press {
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.btn-press:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px #202549;
+}
+.btn-press-lg:active {
+  transform: translate(4px, 4px);
+  box-shadow: 4px 4px 0px 0px #202549;
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: susume
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: anveshak.noreply@gmail.com
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+  data:
+    redis:
+      host: redis
+      port: 6379
+      repositories:
+        enabled: false 
+
+  cache:
+    type: redis
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 3600000
+  private-key-file: ${PRIVATE_KEY_PATH}
+  public-key-file: ${PUBLIC_KEY_PATH}
+
+app:
+  mail:
+    from: anveshak.noreply@gmail.com
+  base-url: http://localhost:8080
+

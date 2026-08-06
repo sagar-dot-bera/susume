@@ -1,0 +1,5 @@
+com\susume\recommendation\service\ItemServiceTest.class
+com\susume\recommendation\strategy\StrategyTests.class
+com\susume\recommendation\util\VectorUtilsTest.class
+com\susume\recommendation\filter\ApiKeyFilterTest.class
+com\susume\recommendation\util\MetadataConcatenatorTest.class
