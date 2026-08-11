@@ -19,11 +19,23 @@ public class RecommendationContext {
     private UUID externalUserId;
     private String externalItemId;
     private int limit;
+    @Builder.Default
+    private int candidatePoolSize = 100;
+    private String surface;
+    private Integer hour;
+    private Integer dayOfWeek;
     private Map<String, Object> filters;
     private Map<String, Object> tenantConfig;
     private Map<String, Object> stateData;
 
     public int getEffectiveLimit(int defaultLimit) {
         return limit > 0 ? limit : defaultLimit;
+    }
+
+    public int getEffectiveCandidatePoolSize(int defaultSize) {
+        if (candidatePoolSize > 0) {
+            return candidatePoolSize;
+        }
+        return limit > 0 ? Math.max(limit, defaultSize) : defaultSize;
     }
 }

@@ -54,6 +54,26 @@ services:
     ports:
       - "6379:6379"
 
+  recommendation-service:
+    build:
+      context: ./recommendation-service
+      dockerfile: Dockerfile
+    container_name: recommendation_ml_service
+    ports:
+      - "8002:8002"
+    environment:
+      MODEL_PATH: /app/models/susume_ranker_v1.joblib
+      MODEL_VERSION: v1
+      SERVICE_PORT: 8002
+      LOG_LEVEL: INFO
+    depends_on:
+      - postgres
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -69,11 +89,13 @@ services:
       RABBITMQ_HOST: rabbitmq
       REDIS_HOST: redis
       EMBEDDING_URL: http://embedding:8001
+      RECOMMENDATION_SERVICE_URL: http://recommendation-service:8002
     depends_on:
       - postgres
       - redis
       - rabbitmq
       - embedding
+      - recommendation-service
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
       interval: 15s
@@ -91,3 +113,4 @@ services:
       - backend
     environment:
       VITE_API_BASE_URL: http://localhost:8080
+
