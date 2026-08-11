@@ -53,3 +53,11 @@ app:
     from: anveshak.noreply@gmail.com
   base-url: http://localhost:8080
 
+recommendation:
+  max-limit: 50
+  ml:
+    enabled: ${RECOMMENDATION_ML_ENABLED:true}
+    service-url: ${RECOMMENDATION_SERVICE_URL:http://localhost:8002}
+    timeout-ms: 500
+
+
