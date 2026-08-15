@@ -1,5 +1,7 @@
-D:\Susume\api-service\src\test\java\com\susume\recommendation\service\ItemServiceTest.java
-D:\Susume\api-service\src\test\java\com\susume\recommendation\strategy\StrategyTests.java
-D:\Susume\api-service\src\test\java\com\susume\recommendation\util\VectorUtilsTest.java
-D:\Susume\api-service\src\test\java\com\susume\recommendation\util\MetadataConcatenatorTest.java
-D:\Susume\api-service\src\test\java\com\susume\recommendation\filter\ApiKeyFilterTest.java
+D:\Susume\backend\src\test\java\com\susume\recommendation\filter\ApiKeyFilterTest.java
+D:\Susume\backend\src\test\java\com\susume\recommendation\util\VectorUtilsTest.java
+D:\Susume\backend\src\test\java\com\susume\recommendation\client\RecommendationRankingClientTest.java
+D:\Susume\backend\src\test\java\com\susume\recommendation\service\CandidateAggregatorTest.java
+D:\Susume\backend\src\test\java\com\susume\recommendation\service\ItemServiceTest.java
+D:\Susume\backend\src\test\java\com\susume\recommendation\util\MetadataConcatenatorTest.java
+D:\Susume\backend\src\test\java\com\susume\recommendation\strategy\StrategyTests.java

@@ -2,6 +2,7 @@ package com.susume.recommendation.config;
 
 import com.susume.recommendation.filter.ApiKeyFilter;
 import com.susume.recommendation.filter.JwtFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,6 +20,9 @@ public class SecurityConfiguration {
 
     private final ApiKeyFilter apiKeyFilter;
     private final JwtFilter jwtFilter;
+
+    @Value("${cors.allowed-origins:http://localhost:5173,http://127.0.0.1:5173}")
+    private String allowedOrigins;
 
     public SecurityConfiguration(ApiKeyFilter apiKeyFilter, JwtFilter jwtFilter) {
         this.apiKeyFilter = apiKeyFilter;
@@ -62,7 +66,10 @@ public class SecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
-        configuration.setAllowedOrigins(java.util.Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173"));
+        java.util.List<String> origins = java.util.Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .collect(java.util.stream.Collectors.toList());
+        configuration.setAllowedOriginPatterns(origins);
         configuration.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(
                 java.util.Arrays.asList("Authorization", "Content-Type", "X-API-KEY", "X-TENANT-SLUG"));

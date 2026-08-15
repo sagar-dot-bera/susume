@@ -3,3 +3,5 @@ com\susume\recommendation\strategy\StrategyTests.class
 com\susume\recommendation\util\VectorUtilsTest.class
 com\susume\recommendation\filter\ApiKeyFilterTest.class
 com\susume\recommendation\util\MetadataConcatenatorTest.class
+com\susume\recommendation\service\CandidateAggregatorTest.class
+com\susume\recommendation\client\RecommendationRankingClientTest.class
