@@ -109,6 +109,7 @@ com\susume\recommendation\dto\RankResponse$RankedRecommendation$RankedRecommenda
 com\susume\recommendation\exception\EmailNotVerifiedException.class
 com\susume\recommendation\dto\InvitationValidationResponse.class
 com\susume\recommendation\service\RefreshTokenService.class
+com\susume\recommendation\controller\GlobalExceptionHandler.class
 com\susume\recommendation\exception\InvitationExpiredException.class
 com\susume\recommendation\dto\RecommendationCandidate.class
 com\susume\recommendation\dto\ApiKeyResponse.class

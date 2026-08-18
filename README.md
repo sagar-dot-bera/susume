@@ -4,32 +4,34 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688.svg)](https://fastapi.tiangolo.com/)
+[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0+-D71F00.svg)](https://www.sqlalchemy.org/)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3+-F7931E.svg)](https://scikit-learn.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C.svg)](https://pytorch.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17%20%2B%20pgvector-blue.svg)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7-DC382D.svg)](https://redis.io/)
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3-FF6600.svg)](https://www.rabbitmq.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38BDF8.svg)](https://tailwindcss.com/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://www.docker.com/)
 
-**Susume** (*勧め — Japanese for "Recommendation"*) is an enterprise-grade, multi-tenant **Personalization-as-a-Service (PaaS)** platform. Designed for modern e-commerce marketplaces, digital content streaming platforms, and multi-tenant SaaS applications, Susume powers real-time, context-aware item recommendations through a modern **Two-Stage Machine Learning Pipeline**.
+**Susume** (*勧め — Japanese for "Recommendation"*) is an enterprise-grade, multi-tenant **Personalization-as-a-Service (PaaS)** platform. Built for modern high-scale e-commerce marketplaces, digital media platforms, and SaaS products, Susume powers real-time, context-aware user recommendations using a state-of-the-art **Two-Stage Machine Learning Pipeline**.
 
-By decoupling **heuristic & vector candidate generation** (Spring Boot core backend) from **machine learning re-ranking** (Python FastAPI microservice), Susume delivers sub-200ms latency, 99.99% system availability with automated fallback, and multi-tenant data isolation.
+By decoupling **heuristic & dense vector candidate generation** (Java/Spring Boot Core) from **machine learning re-ranking** (Python/FastAPI ML Microservice), Susume achieves sub-200ms end-to-end latency, strict 99.99% availability SLAs with automated circuit-breaker fallback, and complete multi-tenant data isolation.
 
 ---
 
-## 💡 Executive Summary & Product Vision
+## 💡 Executive Summary & Architecture Highlights
 
-In modern digital products, static rule-based recommendations lead to stagnant user engagement, low conversion rates, and cold-start failures for new users or catalog items. Pure machine learning models, on the other hand, can be expensive to run over massive catalogs and risk system outages if the ML inference service degrades.
+In high-throughput consumer applications, static rule-based recommendations lead to low conversion and cold-start failures. Conversely, running deep learning model inference over an entire catalog for every request is computationally prohibitive and creates single-point-of-failure risks.
 
-**Susume solves this by providing a robust, hybrid recommendation infrastructure:**
+**Susume addresses this challenge with a resilient two-stage recommendation workflow:**
 
-- **🎯 Boosted Conversion & CTR**: Ranks products by predicting binary interaction probability using a 32-signal canonical feature vector (combining user interaction history, item popularity decay, context, and candidate strategy scores).
-- **🏢 Native Multi-Tenancy**: Complete tenant isolation across database schema queries, vector embeddings (`pgvector`), Redis caching, and API authentication (`X-API-KEY` / JWT).
-- **🛡️ 99.99% Availability Guarantee**: Implements circuit-breaker style resilient fallback logic. If the Python ML microservice is unreachable or exceeds its 500ms SLA, Spring Boot seamlessly falls back to weighted strategy candidate ordering without dropping user recommendations.
-- **🧠 Semantic Dense Vector Matching**: Automatically generates 384-dimensional vector embeddings for new catalog items via PyTorch sentence-transformers (`all-MiniLM-L6-v2`) over an asynchronous RabbitMQ queue.
-- **❄️ Instant Cold-Start Resolution**: Dynamically blends popularity, trending, content metadata similarity, and serendipitous discovery strategies to recommend items to new users with zero interaction history.
-- **📊 Closed-Loop Telemetry**: Persists every recommendation impression and user feedback loop to continually fuel offline model retraining.
+- **🎯 Conversion Probability Re-Ranking**: Predicts user interaction likelihood ($P(\text{click} \mid \text{user}, \text{item}, \text{context})$) across a **32-signal canonical feature vector** combining user activity, item popularity decay, surface contexts, and strategy candidate scores.
+- **🏢 Native Multi-Tenancy**: Enforces strict tenant isolation across PostgreSQL relational queries, `pgvector` dense index namespaces, Redis session caches, and API authorization tokens (`X-API-KEY` / JWT).
+- **🛡️ 99.99% Availability & SLA Fallback**: Employs a strict 500ms REST execution SLA on downstream ML re-ranking. If the ML service times out or degrades, Spring Boot seamlessly falls back to weighted strategy heuristics without dropping user requests.
+- **🧠 Async Semantic Vector Indexing**: Computes 384-dimensional dense embeddings (`all-MiniLM-L6-v2`) via an asynchronous RabbitMQ queue whenever catalog items are ingested, persisting vectors into PostgreSQL 17 `pgvector` HNSW/IVFFlat indexes.
+- **❄️ Instant Cold-Start Resolution**: Combines popularity decay, item tag taxonomy matching, and random exploration strategies to serve instant recommendations for new users with zero prior history.
+- **📊 Offline ML Evaluation & Closed-Loop Telemetry**: Captures impression logs and user clickstream events to drive offline retraining pipelines measured via `NDCG@10`, `Recall@10`, and `Precision@10`.
 
 ---
 
@@ -37,48 +39,48 @@ In modern digital products, static rule-based recommendations lead to stagnant u
 
 ```text
                ┌─────────────────────────────────────────────────────────┐
-               │                React 19 Dashboard / App                 │
+               │          React 19 Admin & Experience Console            │
                └────────────────────────────┬────────────────────────────┘
                                             │ HTTP (JWT / X-API-KEY)
                                             ▼
 ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
 │                            Spring Boot Multi-Tenant Core Backend                            │
-│  - Tenant Authorization            - User Interaction Ingestion                             │
-│  - Candidate Aggregation (10)      - Resilient Fallback & SLA Enforcement                  │
+│  - Multi-Tenant Auth Guard          - Candidate Pool Generation (10 Strategies)             │
+│  - Interaction Stream Ingest        - SLA Enforcement & Heuristic Fallback Engine           │
 └───────┬───────────────────────────────────┬──────────────────────────────────┬──────────────┘
         │                                   │                                  │
         ▼                                   ▼                                  ▼
 ┌─────────────────┐               ┌──────────────────┐               ┌──────────────────┐
 │   Strategy 1    │               │    Strategy 2    │     ...       │   Strategy 10    │
-│ Collaborative   │               │   Content-Based  │               │   pgvector Similar│
+│ Collaborative   │               │   Content-Based  │               │   pgvector Dense │
 └───────┬─────────┘               └─────────┬────────┘               └─────────┬────────┘
         │                                   │                                  │
         └───────────────────────────────────┼──────────────────────────────────┘
                                             │
                                             ▼
-                              Aggregated Candidate Pool (~100 items)
-                              + Preserved Heuristic Scores & User History
+                               Aggregated Candidate Pool (~100 items)
+                               + Strategy Scores & Interaction Signals
                                             │
                                             ▼
-                       ┌────────────────────────────────────────┐
-                       │    Python ML Recommendation Service    │
-                       │               (FastAPI)                │
-                       │  - 32-Signal Feature Construction      │
-                       │  - XGBoost / Logistic Regression Model │
-                       │  - Sub-50ms Inference Scoring          │
-                       └────────────────────┬───────────────────┘
-                                            │
-                                  Ranked Items + ML Probabilities
-                                            │
-                                            ▼
-                       ┌────────────────────────────────────────┐
-                       │           Spring Boot Facade           │
-                       │  - Top-K Selection                     │
-                       │  - Impression Persistence Telemetry    │
-                       └────────────────────┬───────────────────┘
-                                            │
-                                            ▼
-                                  Personalized Response
+                        ┌────────────────────────────────────────┐
+                        │    Python ML Recommendation Service    │
+                        │               (FastAPI)                │
+                        │  - 32-Signal Canonical Feature Engineer│
+                        │  - Scikit-Learn / XGBoost Ranker       │
+                        │  - Sub-50ms Inference Scoring          │
+                        └────────────────────┬───────────────────┘
+                                             │
+                                   Ranked Items + Probability Scores
+                                             │
+                                             ▼
+                        ┌────────────────────────────────────────┐
+                        │           Spring Boot Facade           │
+                        │  - Top-K Candidate Selection           │
+                        │  - Telemetry Impression Logging        │
+                        └────────────────────┬───────────────────┘
+                                             │
+                                             ▼
+                                   Personalized Response
 ```
 
 ---
@@ -86,23 +88,23 @@ In modern digital products, static rule-based recommendations lead to stagnant u
 ## 🔬 Deep-Dive Technical Implementation
 
 ### 1. Stage 1: Candidate Generation Engine (`backend`)
-The Spring Boot backend acts as the gateway and orchestrator. Upon receiving a recommendation request, the [CandidateAggregator.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/service/CandidateAggregator.java) executes 10 candidate generation strategies to gather a high-recall candidate pool (e.g., 100 items):
+The Spring Boot orchestrator executes 10 candidate generation strategies via [CandidateAggregator.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/service/CandidateAggregator.java) to construct a high-recall candidate pool (~100 items):
 
-| Strategy | Implementation Details | Target Scenario |
+| Strategy | Source Code Reference | Target Scenario & Algorithmic Design |
 | :--- | :--- | :--- |
-| **`CollaborativeFilteringStrategy`** | Calculates Jaccard similarity matrix over user interaction overlap history. | Heavy interaction users |
-| **`ContentBasedStrategy`** | Matches catalog category taxonomies and text metadata tags. | Niche item discovery |
-| **`FrequentlyBoughtTogether`** | Computes co-occurrence matrices for items co-interacted in single sessions. | Cross-selling & cart upsell |
-| **`HybridStrategy`** | Applies a weighted linear ensemble of active strategies. | Balanced recommendation |
-| **`PersonalizedStrategy`** | Matches user's recent interaction vector against item profile embeddings. | Active session personalization |
-| **`PopularityStrategy`** | Ranks items by cumulative interaction volume. | Generic & guest fallback |
-| **`RandomDiscoveryStrategy`** | Injects randomized candidate items for serendipity and exploration. | Combating filter bubbles |
-| **`RuleBasedStrategy`** | Evaluates deterministic business rules and category filters. | Tenant business requirements |
-| **`SimilarItemsStrategy`** | Executes cosine vector search (`pgvector`) against item embedding vectors. | Item detail pages |
-| **`TrendingStrategy`** | Applies exponential time-decay scoring to recent high-frequency interactions. | Viral / trending catalog |
+| **`CollaborativeFilteringStrategy`** | [CollaborativeFilteringStrategy.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/strategy/CollaborativeFilteringStrategy.java) | Calculates Jaccard similarity matrix across user interaction histories. |
+| **`ContentBasedStrategy`** | [ContentBasedStrategy.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/strategy/ContentBasedStrategy.java) | Matches catalog taxonomy tags and metadata categories against user preferences. |
+| **`FrequentlyBoughtTogether`** | [FrequentlyBoughtTogetherStrategy.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/strategy/FrequentlyBoughtTogetherStrategy.java) | Computes co-occurrence matrices for items co-interacted in single user sessions. |
+| **`HybridStrategy`** | [HybridStrategy.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/strategy/HybridStrategy.java) | Computes a weighted ensemble of candidate strategies with strategy-level weights. |
+| **`PersonalizedStrategy`** | [PersonalizedStrategy.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/strategy/PersonalizedStrategy.java) | Matches active user interaction vectors against item profiles. |
+| **`PopularityStrategy`** | [PopularityStrategy.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/strategy/PopularityStrategy.java) | Ranks catalog items by cumulative engagement volume for guest users. |
+| **`RandomDiscoveryStrategy`** | [RandomDiscoveryStrategy.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/strategy/RandomDiscoveryStrategy.java) | Injects randomized high-quality candidates to combat filter bubbles. |
+| **`RuleBasedStrategy`** | [RuleBasedStrategy.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/strategy/RuleBasedStrategy.java) | Filters and ranks items based on tenant-configured business rules. |
+| **`SimilarItemsStrategy`** | [SimilarItemsStrategy.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/strategy/SimilarItemsStrategy.java) | Performs HNSW cosine vector search (`pgvector`) on catalog embeddings. |
+| **`TrendingStrategy`** | [TrendingStrategy.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/strategy/TrendingStrategy.java) | Applies exponential time-decay scoring to recent high-frequency interactions. |
 
 ### 2. Stage 2: Feature Engineering & ML Re-ranking (`recommendation-service`)
-The Python FastAPI microservice accepts the aggregated candidate pool and constructs a canonical **32-Signal Feature Vector** for every user-item candidate pair in [features.py](file:///d:/Susume/recommendation-service/app/ranking/features.py):
+The Python FastAPI microservice accepts candidate items and builds a **32-Signal Feature Vector** for every user-item candidate pair in [features.py](file:///d:/Susume/recommendation-service/app/ranking/features.py):
 
 ```text
 32 Canonical Signals Breakdown:
@@ -115,69 +117,68 @@ The Python FastAPI microservice accepts the aggregated candidate pool and constr
 └── Context Features (3): [surfaceCode, hourOfDay, dayOfWeek]
 ```
 
-The [ranker.py](file:///d:/Susume/recommendation-service/app/ranking/ranker.py) evaluates candidate vectors using pre-trained **Logistic Regression / XGBoost** classifiers to output a normalized probability score \(P(\text{conversion} \mid \text{user}, \text{item}, \text{context})\).
+The inference engine in [ranker.py](file:///d:/Susume/recommendation-service/app/ranking/ranker.py) evaluates feature vectors using pre-trained model weights (`susume_ranker_v1.joblib`) to produce probability scores used for final ordering.
 
 ### 3. Asynchronous Vector Embedding Microservice (`embedding-service`)
-- **Model**: `sentence-transformers/all-MiniLM-L6-v2` generating 384-dimensional dense vector embeddings.
-- **Event Bus**: When an item is created/updated in the Spring Boot backend, an event is published to **RabbitMQ**.
-- **Vector Storage**: The embedding microservice computes dense vectors asynchronously and updates PostgreSQL 17 using native `pgvector` indexing (`HNSW`/`IVFFlat`).
+- **Model**: `sentence-transformers/all-MiniLM-L6-v2` generating 384-dimensional dense vectors.
+- **Event-Driven Broker**: Item creations/updates publish catalog events over **RabbitMQ**.
+- **Vector Persistence**: [main.py](file:///d:/Susume/embedding-service/main.py) computes dense vector embeddings asynchronously and updates PostgreSQL 17 using native `pgvector` indexes (`HNSW`/`IVFFlat`).
 
-### 4. Enterprise Resilience & Fallback Engine
-System reliability is built into [RecommendationRankingClient.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/client/RecommendationRankingClient.java):
-- **Execution SLA**: 500ms REST timeout applied to the ML re-ranking request.
-- **Circuit Breaker / Fallback**: If the Python service fails, times out, or returns a 5xx error, Spring Boot seamlessly falls back to sorting candidates by their aggregate strategy heuristic scores.
-- **Impression Logging**: All served recommendations (whether ranked by ML or Heuristics) log impression events to PostgreSQL to track offline model performance and prevent item repetition.
+### 4. Resilient Fallback Engine & SLA Enforcement
+Production reliability is enforced in [RecommendationRankingClient.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/client/RecommendationRankingClient.java):
+- **500ms SLA Timeout**: Non-blocking REST client timeout enforced per request.
+- **Circuit Breaker Fallback**: If the Python service fails or times out, Spring Boot falls back to candidate ordering by heuristic scores without dropping response payloads.
+- **Impression Logging**: All returned items log impression telemetry to database tables via [RecommendationFacade.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/service/RecommendationFacade.java).
 
 ---
 
-## ⚡ Multi-Service Topology & Infrastructure
+## ⚡ Multi-Service Topology & Network Map
 
 ```mermaid
 flowchart LR
-    Client[React 19 Frontend / App] -->|JWT or X-API-KEY| Backend[Spring Boot Backend :8080]
+    Client[React 19 Frontend Dashboard] -->|JWT or X-API-KEY| Backend[Spring Boot Core Backend :8080]
     Backend -->|Spring Data JPA| DB[(PostgreSQL 17 + pgvector :5433)]
-    Backend -->|Cache User Signals| Redis[(Redis 7 :6379)]
+    Backend -->|Interaction & Session Cache| Redis[(Redis 7 :6379)]
     Backend -->|Publish Catalog Events| Rabbit[(RabbitMQ :5672)]
-    Backend -->|POST /rank (500ms SLA)| Ranker[Python ML Service :8002]
+    Backend -->|POST /rank - 500ms SLA| Ranker[Python ML Service :8002]
     Rabbit -->|Async Consumer| Embedding[Python Embedding Service :8001]
-    Embedding -->|Store Vectors| DB
-    Ranker -->|Load Models| Models[(Joblib Model Artifacts)]
+    Embedding -->|Store Dense Vectors| DB
+    Ranker -->|Load Artifacts| Models[(Joblib Model Artifacts)]
 ```
 
-| Service | Technology | Port | Primary Responsibility |
+| Service Component | Technology Stack | Container Port | Core Functionality |
 | :--- | :--- | :--- | :--- |
-| **Spring Boot Core** | Java 17, Spring Boot 3.2 | `:8080` | Gateway, Auth, Multi-Tenancy, Strategy Aggregator, Facade |
-| **Python ML Re-Ranker** | Python 3.11, FastAPI, scikit-learn | `:8002` | 32-signal feature engineering, candidate scoring, ML re-ranking |
-| **Embedding Engine** | Python 3.11, FastAPI, PyTorch | `:8001` | Async NLP vector generation (`all-MiniLM-L6-v2`) |
-| **PostgreSQL Database** | PostgreSQL 17 + `pgvector` | `:5433` | Relational storage, impressions logging, dense vector similarity |
-| **Redis Cache** | Redis 7 | `:6379` | Fast user interaction caching & active session store |
-| **RabbitMQ Queue** | RabbitMQ 3 | `:5672` / `:15672` | Asynchronous event broker for catalog updates |
-| **React Dashboard** | React 19, TypeScript, Vite | `:80` | Tenant administration, API key management, analytics |
+| **Spring Boot Core** | Java 17, Spring Boot 3.2 | `:8080` | Gateway, Auth, Multi-Tenancy, Strategy Pool Aggregator, SLA Facade |
+| **Python ML Ranker** | Python 3.11, FastAPI, scikit-learn | `:8002` | 32-signal feature engineering, ML model scoring, re-ranking REST API |
+| **Embedding Engine** | Python 3.11, FastAPI, PyTorch | `:8001` | Async NLP vector generation (`all-MiniLM-L6-v2`) via RabbitMQ |
+| **PostgreSQL Database** | PostgreSQL 17 + `pgvector` | `:5433` | Relational tables, impression logging, vector similarity search |
+| **Redis Cache** | Redis 7 | `:6379` | User interaction caching & active tenant session store |
+| **RabbitMQ Queue** | RabbitMQ 3 Management | `:5672` / `:15672` | Asynchronous event broker for catalog ingestion events |
+| **React Dashboard** | React 19, TypeScript, Tailwind v4 | `:80` | Editorial Ronin UI, strategy tuning, API keys, usage stats |
 
 ---
 
 ## 📊 Offline ML Training & Evaluation Pipeline
 
-Susume features a complete offline machine learning pipeline designed to prevent data leakage and measure recommendation precision before model deployment.
+Susume includes an offline training engine built to prevent data leakage and ensure ranking quality:
 
-1. **Negative Sampling** ([dataset.py](file:///d:/Susume/recommendation-service/training/dataset.py)): Pairs true user interactions with non-interacted catalog items at a 1:3 positive-to-negative ratio.
-2. **Temporal Split**: Splits historical impression data chronologically (80% past interactions for training, 20% future interactions for validation) to mirror production conditions.
+1. **Negative Sampling** ([dataset.py](file:///d:/Susume/recommendation-service/training/dataset.py)): Pairs true positive user interactions with non-interacted items at a 1:3 ratio.
+2. **Temporal Split**: Chronologically splits historical interaction data (80% training, 20% validation) to reflect true production conditions.
 3. **Evaluation Metrics** ([evaluate.py](file:///d:/Susume/recommendation-service/training/evaluate.py)):
-   - `NDCG@10` (Normalized Discounted Cumulative Gain at Rank 10): Measures ranking quality and position sensitivity.
+   - `NDCG@10` (Normalized Discounted Cumulative Gain): Measures rank position sensitivity and quality.
    - `Recall@10` & `Precision@10`: Measures candidate coverage and top-K relevance.
-4. **Artifact Serialization**: Outputs binary `.joblib` model weights and `.json` metadata schema for low-latency loading in production.
+4. **Model Training & Serialization** ([train.py](file:///d:/Susume/recommendation-service/training/train.py)): Serializes low-latency binary `.joblib` model artifacts for production scoring.
 
 ---
 
-## 🛠️ Complete Tech Stack
+## 🛠️ Tech Stack & Ecosystem
 
-- **Core Backend**: Java 17, Spring Boot 3.2, Spring Security, Spring Data JPA, Flyway, RestTemplate
-- **Data Science & ML**: Python 3.11, FastAPI, scikit-learn, pandas, numpy, joblib, pydantic, pytest
-- **NLP & Deep Learning**: PyTorch, Hugging Face `sentence-transformers` (`all-MiniLM-L6-v2`)
-- **Database & Storage**: PostgreSQL 17 with `pgvector` extension
-- **Caching & Messaging**: Redis 7, RabbitMQ 3
-- **Frontend App**: React 19, TypeScript, Vite, Tailwind CSS
-- **Orchestration & DevOps**: Docker, Docker Compose, Flyway DB Migrations
+- **Backend & Core Engine**: Java 17, Spring Boot 3.2, Spring Security, Spring Data JPA, Flyway, RestTemplate, Jackson
+- **ML & Data Science**: Python 3.11, FastAPI, SQLAlchemy 2.0 (`asyncpg`), scikit-learn, PyTorch, HuggingFace `sentence-transformers`, NumPy, Pandas, Joblib, Pydantic, Pytest
+- **Database & Storage**: PostgreSQL 17 with `pgvector` extension (HNSW / IVFFlat indexing)
+- **Messaging & Caching**: RabbitMQ 3, Redis 7
+- **Frontend Dashboard**: React 19, TypeScript, Vite, Tailwind CSS v4, Lucide React, TanStack Query
+- **DevOps & Infrastructure**: Docker, Docker Compose, Flyway DB Migrations
 
 ---
 
@@ -185,36 +186,49 @@ Susume features a complete offline machine learning pipeline designed to prevent
 
 ```text
 .
-├── backend/                                  # Spring Boot backend microservice
+├── backend/                                  # Java 17 Spring Boot Multi-Tenant Core Backend
 │   ├── src/main/java/com/susume/recommendation/
 │   │   ├── client/
-│   │   │   └── [RecommendationRankingClient.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/client/RecommendationRankingClient.java) # Resilient HTTP client with fallback
-│   │   ├── controller/                       # Recommendation & Item REST controllers
-│   │   ├── dto/                              # Recommendation DTOs & Rank payloads
-│   │   ├── entity/                           # Interaction, Item, & Impression entities
+│   │   │   └── RecommendationRankingClient.java   # Resilient HTTP Client with 500ms SLA Fallback
+│   │   ├── controller/                       # Recommendation, Item, Interaction, & Auth Controllers
+│   │   ├── dto/                              # DTO payloads & ranking schemas
+│   │   ├── entity/                           # JPA Entities (Tenant, Item, Interaction, Impression)
 │   │   ├── service/
-│   │   │   ├── [CandidateAggregator.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/service/CandidateAggregator.java)       # Candidate pool generator (10 strategies)
-│   │   │   └── [RecommendationFacade.java](file:///d:/Susume/backend/src/main/java/com/susume/recommendation/service/RecommendationFacade.java)      # Top-K selection & impression logging
-│   │   └── strategy/                         # 10 Spring Boot recommendation strategy implementations
-│   └── src/main/resources/db/migration/     # Flyway database schema migrations (V1 - V8)
+│   │   │   ├── CandidateAggregator.java       # Candidate pool generator executing 10 strategies
+│   │   │   └── RecommendationFacade.java      # Top-K selection & impression logging facade
+│   │   └── strategy/                         # 10 Strategy implementations (Collaborative, Vector, etc.)
+│   └── src/main/resources/db/migration/     # Flyway SQL schema migrations (V1 - V8)
 │
-├── recommendation-service/                   # Python FastAPI ML Candidate Re-Ranker
+├── recommendation-service/                   # Python 3.11 FastAPI ML Candidate Re-Ranker
 │   ├── app/
-│   │   ├── api/                              # FastAPI REST router (/rank endpoint)
+│   │   ├── api/                              # FastAPI endpoints (/rank, /health)
+│   │   ├── db/
+│   │   │   ├── session.py                     # Async SQLAlchemy 2.0 engine session manager
+│   │   │   └── models.py                      # ORM models (Item, Interaction, Impression, Tenant)
 │   │   ├── ranking/
-│   │   │   ├── [features.py](file:///d:/Susume/recommendation-service/app/ranking/features.py)                   # 32-signal canonical feature engineer
-│   │   │   └── [ranker.py](file:///d:/Susume/recommendation-service/app/ranking/ranker.py)                     # Scikit-learn model inference engine
-│   │   └── schemas/                          # Pydantic request/response validation schemas
+│   │   │   ├── features.py                   # 32-Signal canonical feature vector engineer
+│   │   │   └── ranker.py                     # ML scoring ranker engine
+│   │   └── schemas/                          # Pydantic validation schemas
 │   ├── training/
-│   │   ├── [dataset.py](file:///d:/Susume/recommendation-service/training/dataset.py)                     # Negative sampling & temporal train/test split
-│   │   ├── [train.py](file:///d:/Susume/recommendation-service/training/train.py)                       # ML model training execution pipeline
-│   │   └── [evaluate.py](file:///d:/Susume/recommendation-service/training/evaluate.py)                    # Offline ranking evaluation (NDCG@10, Recall@10)
-│   └── tests/                                # Pytest automated unit & feature engineering tests
+│   │   ├── dataset.py                     # Negative sampling & historical data loader
+│   │   ├── train.py                       # Training pipeline execution script
+│   │   └── evaluate.py                    # Evaluation metrics script (NDCG@10, Recall@10)
+│   └── tests/                                # Pytest suite for feature construction & APIs
 │
-├── embedding-service/                        # Python FastAPI Sentence-Transformers Service
+├── embedding-service/                        # Python 3.11 Async Dense Vector Generator
+│   ├── db.py                                 # SQLAlchemy pgvector catalog & vector updates
 │   └── main.py                               # HuggingFace dense vector generator (384-dim)
-├── frontend/                                 # React 19 + TypeScript tenant dashboard
-├── docker-compose.yml                        # Docker multi-container orchestration
+│
+├── frontend/                                 # React 19 + Tailwind v4 Admin Dashboard
+│   ├── src/
+│   │   ├── features/
+│   │   │   ├── authentication/               # Tenant Login, Register, & Auth State
+│   │   │   └── dashboard/                    # Overview, Strategy Management, API Keys, Docs
+│   │   ├── components/                       # Editorial Ronin UI Design Components
+│   │   └── services/                         # REST API Client Service Layer
+│
+├── docker-compose.yml                        # Docker multi-service container orchestration
+├── .env.example                              # Master environment variables template
 └── README.md
 ```
 
@@ -223,53 +237,56 @@ Susume features a complete offline machine learning pipeline designed to prevent
 ## 🚀 Quick Start with Docker Compose
 
 ### Prerequisites
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Docker Compose)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Docker Engine + Compose)
 - Java 17+ (for local backend development)
-- Python 3.11+ (for local ML pipeline development)
+- Python 3.11+ (for local ML training development)
 
 ### 1. Environment Setup
-Create a `.env` file in the root directory (or use `.env.example` defaults):
+Copy [.env.example](file:///d:/Susume/.env.example) to `.env` in the root directory:
 
+```bash
+cp .env.example .env
+```
+
+Ensure default environment configurations:
 ```env
 POSTGRES_DB=susume
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_VOLUME_SOURCE=./docker-data/postgres
-
-EMBEDDING_SOURCE_VOLUME_SOURCE=./docker-data/huggingface
+EMBEDDING_SOURCE_VOLUME_SOURCE=./docker-data/embedding-service
 
 RABBITMQ_USERNAME=guest
 RABBITMQ_PASSWORD=guest
 
-JWT_SECRET=your-secure-jwt-secret-key-change-this-in-production
-RECOMMENDATION_ML_ENABLED=true
+JWT_SECRET=cG9hc2Qyazg4OWFzZGZoamtsc2E5ODc2N2FzZGZoamtsc2E5
 RECOMMENDATION_SERVICE_URL=http://recommendation-service:8002
 ```
 
-### 2. Launch Containers
-Build and run the entire multi-service stack with Docker Compose:
+### 2. Launch Container Topology
+Build and start all microservices in detached mode:
 
 ```bash
 docker compose up -d --build
 ```
 
-### 3. Verify Running Microservices
+### 3. Service Verification & Health Status
 
-| Service | Endpoint URL | Status / Health Check |
+| Service Name | Local Endpoint URL | Health Check / Verification Route |
 | :--- | :--- | :--- |
-| **Spring Boot Core** | `http://localhost:8080` | `GET /api/v1/recommendations` |
-| **Python ML Ranker** | `http://localhost:8002/health` | `{"status": "healthy"}` |
-| **Embedding Engine** | `http://localhost:8001/health` | `{"status": "healthy"}` |
-| **React Dashboard** | `http://localhost` | Admin Web Dashboard |
-| **RabbitMQ Management** | `http://localhost:15672` | Guest / Guest login |
-| **PostgreSQL 17** | `localhost:5433` | Port `5433` (`susume` database) |
+| **Spring Boot Backend** | `http://localhost:8080` | `GET /actuator/health` |
+| **Python ML Ranker** | `http://localhost:8002` | `GET /health` -> `{"status":"healthy"}` |
+| **Embedding Engine** | `http://localhost:8001` | `GET /health` -> `{"status":"healthy"}` |
+| **React Dashboard** | `http://localhost` | Browser Dashboard Interface |
+| **RabbitMQ Console** | `http://localhost:15672` | Login: `guest` / `guest` |
+| **PostgreSQL 17** | `localhost:5433` | PostgreSQL (`susume` database) |
 
 ---
 
-## 🧪 Development, Testing & Training
+## 🧪 Local Microservice Testing & Model Training
 
-### 1. Python ML Microservice Tests & Offline Model Training
-To run unit tests and execute offline model training:
+### 1. Python ML Microservice Unit Tests & Training
+To run unit tests and execute model retraining offline:
 
 ```bash
 cd recommendation-service
@@ -277,15 +294,15 @@ cd recommendation-service
 # Install dependencies
 pip install -r requirements.txt
 
-# Run pytest unit tests
+# Run Pytest suite
 python -m pytest
 
-# Run offline ML model training & output NDCG@10 metrics
+# Execute offline training pipeline & output evaluation metrics
 python -m training.train
 ```
 
-### 2. Spring Boot Core Unit & Integration Tests
-To execute Spring Boot JUnit tests:
+### 2. Spring Boot Core Backend Tests
+To run Java unit and integration tests:
 
 ```bash
 cd backend
@@ -294,29 +311,41 @@ cd backend
 
 ---
 
-## 🎯 Primary API Endpoint Reference
+## 🎯 Key REST API Reference
 
 ### Recommendations & Ranking
-- `GET /api/v1/recommendations` — Fetch personalized recommendations (Candidate Generation + ML Re-Ranking)
-- `GET /api/v1/recommendations/trending` — Fetch global trending catalog items fallback
-- `POST /api/v1/recommendations/rank` *(Internal Python ML)* — Candidate re-ranking and feature scoring endpoint
+- `GET /api/v1/recommendations` — Returns personalized top-K recommendations for user (Candidate Generation + ML Re-Ranking)
+- `GET /api/v1/recommendations/trending` — Returns global trending items fallback
+- `POST /api/v1/recommendations/rank` *(Internal Python ML API)* — Candidate re-ranking and 32-signal feature scoring
 
-### Catalog & Interaction Ingestion
-- `POST /api/v1/items` — Register or update catalog item metadata & push embedding event
+### Catalog Items & Clickstream Telemetry
+- `POST /api/v1/items` — Register/update catalog items & publish RabbitMQ embedding event
 - `POST /api/v1/interactions` — Track user clickstream events (`VIEW`, `CLICK`, `LIKE`, `PURCHASE`)
-- `GET /api/v1/interactions/history` — Fetch user interaction history timeline
+- `GET /api/v1/interactions/history` — Retrieve user interaction history timeline
 
 ---
 
-## 🌟 Recruiter & Engineering Highlights
+## 🎨 Admin Dashboard & User Interface
 
-- **Decoupled Enterprise Design**: Designed a high-throughput recommendation architecture decoupling candidate selection from ML inference.
-- **Resilience & SLA Guarantees**: Built-in HTTP client timeout fallback protecting application performance during downstream ML microservice degradation.
-- **Data Science Rigor**: Rigorous offline ML evaluation featuring temporal train/test splitting, negative sampling, and `NDCG@10` tracking.
-- **End-to-End Execution**: Delivered backend Java Spring Boot APIs, Python data science microservices, pgvector vector search, RabbitMQ event streaming, and a React admin frontend.
+The React 19 frontend is crafted following **The Editorial Ronin** design language (manga-inspired typography, high contrast, offset layouts, and dynamic micro-animations):
+
+- **Dashboard Home**: Real-time throughput metrics, latency monitoring, and active candidate strategies.
+- **Strategy Management**: Fine-tune weights across candidate strategies in real-time.
+- **API Key Manager**: Generate and rotate multi-tenant `X-API-KEY` credentials.
+- **Interactive API Documentation**: Embedded API explorer with copy-paste code snippets for integrations.
+- **Stats & Telemetry Usage**: Live charts displaying impression metrics and click-through rates.
+
+---
+
+## 🌟 Engineering Achievements & Best Practices
+
+- **Decoupled Architecture**: Seamlessly decouples high-speed Spring Boot candidate generation from Python machine learning re-ranking.
+- **Production Resilience**: Built-in 500ms REST SLA timeout with automatic fallback guarantees system uptime during ML microservice outages.
+- **Rigorous ML Methodology**: Implements temporal train/test splitting, negative sampling (1:3 ratio), and `NDCG@10` tracking to prevent offline data leakage.
+- **Full-Stack Execution**: Integrates Java 17, Python 3.11, PyTorch sentence-transformers, `pgvector`, RabbitMQ, Redis, and React 19 into a single production dockerized stack.
 
 ---
 
 ## 📜 License
 
-This project is open-source software licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE).

@@ -30,6 +30,7 @@ export const ApiKeyManager: React.FC = () => {
   const [tenant, setTenant] = useState(store.getCurrentTenant());
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<KeyForm>({
     resolver: zodResolver(keySchema)
@@ -122,26 +123,51 @@ export const ApiKeyManager: React.FC = () => {
           )}
 
           {/* Generate Key Card */}
-          <Card 
-            title="Create Client Access Credentials" 
-            subtitle="Tokens must be scoping-tagged by function."
-          >
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-4 items-end">
-                <div className="flex-1 w-full">
-                  <Input
-                    label="Credential Scope Name"
-                    placeholder="e.g. Web Store Integration"
-                    error={errors.name?.message}
-                    {...register('name')}
-                  />
-                </div>
-                <Button variant="secondary" type="submit" className="w-full sm:w-auto h-[46px] whitespace-nowrap">
-                  <Plus size={16} /> Generate Key
-                </Button>
+          <div className="border-2 border-brand-primary rounded-[8px] bg-white shadow-hard overflow-hidden transition-all duration-300">
+            <div 
+              onClick={() => setIsFormOpen(!isFormOpen)}
+              className="p-6 bg-white cursor-pointer select-none flex justify-between items-center hover:bg-bg-base/30 transition-colors"
+            >
+              <div>
+                <h3 className="font-heading font-extrabold text-base uppercase tracking-wide text-brand-primary flex items-center gap-2">
+                  <Plus size={18} className={`text-brand-secondary transition-transform duration-300 ${isFormOpen ? 'rotate-45' : ''}`} />
+                  Create Client Access Credentials
+                </h3>
+                <p className="text-xs text-text-secondary font-sans mt-0.5">
+                  Click to {isFormOpen ? 'collapse' : 'expand'} credential creation form.
+                </p>
               </div>
-            </form>
-          </Card>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsFormOpen(!isFormOpen);
+                }}
+              >
+                {isFormOpen ? 'Close' : 'New Key'}
+              </Button>
+            </div>
+
+            <div className={`transition-all duration-300 overflow-hidden ${isFormOpen ? 'max-h-96 opacity-100 border-t-2 border-brand-primary/20 p-6 bg-bg-base/20' : 'max-h-0 opacity-0 p-0'}`}>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4 items-end">
+                  <div className="flex-1 w-full" onClick={() => setIsFormOpen(true)}>
+                    <Input
+                      label="Credential Scope Name"
+                      placeholder="e.g. Web Store Integration"
+                      error={errors.name?.message}
+                      onFocus={() => setIsFormOpen(true)}
+                      {...register('name')}
+                    />
+                  </div>
+                  <Button variant="secondary" type="submit" className="w-full sm:w-auto h-[46px] whitespace-nowrap">
+                    <Plus size={16} /> Generate Key
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
 
           {/* Active Keys List */}
           <Card title="Active Credentials" padding="none">

@@ -72,8 +72,21 @@ export const StrategyManagement: React.FC = () => {
     recLimit: 50,
     cfWeight: 45,
     contentWeight: 45,
-    trendWeight: 15 // Sum = 105% -> triggers warning banner like design mock
+    trendWeight: 10 // Sum = 100%
   });
+
+  const handleNormalizeWeights = () => {
+    const total = config.cfWeight + config.contentWeight + config.trendWeight;
+    if (total === 0) {
+      setConfig(prev => ({ ...prev, cfWeight: 40, contentWeight: 40, trendWeight: 20 }));
+    } else {
+      const newCf = Math.round((config.cfWeight / total) * 100);
+      const newContent = Math.round((config.contentWeight / total) * 100);
+      const newTrend = 100 - newCf - newContent;
+      setConfig(prev => ({ ...prev, cfWeight: newCf, contentWeight: newContent, trendWeight: newTrend }));
+    }
+    setHasUnsavedChanges(true);
+  };
 
   useEffect(() => {
     const loadBackendData = async () => {
@@ -514,11 +527,19 @@ export const StrategyManagement: React.FC = () => {
                 </div>
               </div>
 
-              {/* Warning Banner if sum != 100% (Matches design image) */}
+              {/* Warning Banner if sum != 100% */}
               {!isBlendValid && (
-                <div className="p-3 border-2 border-[#202549] bg-[#E63963] text-white text-xs font-mono font-black tracking-widest uppercase flex items-center justify-center gap-2 shadow-[2px_2px_0px_#202549]">
-                  <AlertTriangle size={16} />
-                  <span>WEIGHTS MUST SUM TO 100%! (CURRENTLY {totalBlendWeight}%)</span>
+                <div className="p-3 border-2 border-[#202549] bg-[#E63963] text-white text-xs font-mono font-black tracking-widest uppercase flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[2px_2px_0px_#202549]">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle size={16} />
+                    <span>WEIGHTS MUST SUM TO 100%! (CURRENTLY {totalBlendWeight}%)</span>
+                  </div>
+                  <button
+                    onClick={handleNormalizeWeights}
+                    className="px-3 py-1 bg-[#F2C94C] text-[#202549] border border-[#202549] hover:bg-white transition-colors cursor-pointer font-bold text-[10px]"
+                  >
+                    AUTO-BALANCE TO 100%
+                  </button>
                 </div>
               )}
             </div>

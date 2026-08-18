@@ -144,6 +144,7 @@ D:\Susume\backend\src\main\java\com\susume\recommendation\dto\StrategyInfoRespon
 D:\Susume\backend\src\main\java\com\susume\recommendation\entity\InvitationStatus.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\RecommendationEngineApplication.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\RankRequest.java
+D:\Susume\backend\src\main\java\com\susume\recommendation\controller\GlobalExceptionHandler.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\DashboardStatsResponse.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\repository\AuthTokenRepository.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\AuthResponse.java

@@ -92,7 +92,7 @@ public class AuthMailService {
         String verifyUrl = baseUrl + "/auth/reset-password?token=" + token;
 
         emailSenderService.sendPlainText(email, "Reset your password",
-                " for Plug AI by clicking: " + verifyUrl
+                "Reset your password for Susume Recommendation Platform by clicking: " + verifyUrl
                         + "\nThis link expires in 1 hours.",
                 from);
     }

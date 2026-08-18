@@ -49,6 +49,24 @@ async def health():
     """Health check endpoint."""
     return {"status": "ok", "model": MODEL_NAME, "backend": "onnx"}
 
+@app.post("/embed/batch-db")
+async def process_batch_db_embeddings(limit: int = 10):
+    """Process pending item embeddings directly from PostgreSQL via SQLAlchemy ORM."""
+    try:
+        from db import fetch_pending_embedding_items, update_item_embedding
+        pending_items = fetch_pending_embedding_items(limit=limit)
+        processed_count = 0
+        for item in pending_items:
+            text = str(item.metadata_.get("title", "")) + " " + str(item.metadata_.get("description", ""))
+            if text.strip():
+                vector = model.encode(text.strip(), convert_to_tensor=False).tolist()
+                update_item_embedding(item.id, vector)
+                processed_count += 1
+        return {"processed": processed_count, "status": "completed"}
+    except Exception as e:
+        logger.warning(f"Batch DB processing skipped or error: {e}")
+        return {"processed": 0, "status": "skipped", "reason": str(e)}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)

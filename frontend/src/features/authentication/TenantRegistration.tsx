@@ -8,7 +8,7 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { MascotBubble } from '../../components/ui/MascotBubble';
-import { ArrowLeft, Building2, Check } from 'lucide-react';
+import { ArrowLeft, Building2, ShieldCheck, Zap, KeyRound } from 'lucide-react';
 import mascotReading from '../../assets/Mascot reading book.svg';
 
 const registrationSchema = z.object({
@@ -19,8 +19,7 @@ const registrationSchema = z.object({
   tenantSlug: z.string()
     .min(3, 'Tenant slug must be at least 3 characters')
     .max(20, 'Tenant slug cannot exceed 20 characters')
-    .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens'),
-  plan: z.enum(['Starter', 'Growth', 'Enterprise']).refine(v => v !== undefined, 'Please select a subscription tier')
+    .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens')
 });
 
 type RegistrationForm = z.infer<typeof registrationSchema>;
@@ -36,14 +35,12 @@ export const TenantRegistration: React.FC = () => {
       username: '',
       password: '',
       tenantName: '',
-      tenantSlug: '',
-      plan: 'Growth'
+      tenantSlug: ''
     }
   });
 
   const tenantNameValue = watch('tenantName');
   const emailValue = watch('email');
-  const selectedPlan = watch('plan');
 
   // Auto-generate slug and username suggestions
   React.useEffect(() => {
@@ -85,30 +82,6 @@ export const TenantRegistration: React.FC = () => {
     }
   };
 
-  const planTiers = [
-    {
-      id: 'Starter' as const,
-      name: 'Starter Plan',
-      price: '$49/mo',
-      desc: 'Ideal for testing and small catalog sizes up to 1,000 items.',
-      features: ['1,000 Catalog Items', '10,000 Monthly Recs', '1 API Key', 'Community Support']
-    },
-    {
-      id: 'Growth' as const,
-      name: 'Growth Plan',
-      price: '$199/mo',
-      desc: 'Perfect for growing ecommerce shops and platforms up to 50k items.',
-      features: ['50,000 Catalog Items', '500,000 Monthly Recs', '5 API Keys', 'Sub-150ms Latency SLA', 'Email Support']
-    },
-    {
-      id: 'Enterprise' as const,
-      name: 'Enterprise Plan',
-      price: '$999/mo',
-      desc: 'Custom parameters, maximum performance S3 queues and full isolation.',
-      features: ['Unlimited Catalog Items', 'Unlimited Recs', 'Unlimited API Keys', 'Sub-50ms Dedicated Cache', '24/7 SLA Support']
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-bg-base flex flex-col justify-between py-12 px-6 md:px-12">
       {/* Top logo header */}
@@ -128,8 +101,8 @@ export const TenantRegistration: React.FC = () => {
         {/* Left Column: Form (7 cols) */}
         <div className="lg:col-span-8 flex flex-col gap-6">
           <Card 
-            title="Register New Isolated Tenant" 
-            subtitle="Configure workspace settings to isolate recommendation data spaces."
+            title="Register Isolated Tenant Workspace" 
+            subtitle="Configure workspace credentials and data isolation settings."
           >
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 text-left">
               {errorMsg && (
@@ -180,50 +153,16 @@ export const TenantRegistration: React.FC = () => {
                 />
               </div>
 
-              {/* Plans Selector */}
-              <div className="space-y-3">
-                <label className="text-xs font-bold uppercase tracking-wider text-brand-primary font-heading">
-                  Select Subscription Plan Tier
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {planTiers.map((p) => {
-                    const isSelected = selectedPlan === p.id;
-                    return (
-                      <div
-                        key={p.id}
-                        onClick={() => setValue('plan', p.id)}
-                        className={`
-                          border-2 rounded-[6px] p-4 flex flex-col justify-between cursor-pointer select-none transition-all
-                          ${isSelected 
-                            ? 'bg-brand-accent/15 border-brand-primary shadow-hard-sm' 
-                            : 'bg-white border-brand-primary/30 hover:border-brand-primary hover:bg-bg-base/30'
-                          }
-                        `}
-                      >
-                        <div>
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="font-heading font-extrabold uppercase text-xs text-brand-primary">{p.name}</span>
-                            {isSelected && <Check size={14} className="text-brand-secondary stroke-[3px]" />}
-                          </div>
-                          <span className="font-display font-normal text-lg tracking-wide text-brand-primary">{p.price}</span>
-                          <p className="text-[10px] text-text-secondary mt-2 leading-relaxed font-sans">{p.desc}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
               <div className="border-t-2 border-brand-primary/20 pt-6">
                 <Button variant="secondary" size="lg" fullWidth type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Registering Workspace...' : 'Generate Sandbox Workspace'} <ArrowLeft size={16} className="ml-2 rotate-180" />
+                  {isSubmitting ? 'Creating Workspace...' : 'Register Workspace'} <ArrowLeft size={16} className="ml-2 rotate-180" />
                 </Button>
               </div>
             </form>
           </Card>
         </div>
 
-        {/* Right Column: Chibi explanation & plan summary (4 cols) */}
+        {/* Right Column: Information & Slug specs (4 cols) */}
         <div className="lg:col-span-4 flex flex-col gap-6">
           <MascotBubble
             mascot="reading"
@@ -243,34 +182,39 @@ export const TenantRegistration: React.FC = () => {
             }
           />
 
-          <Card title="Plan Details" padding="md" variant="cream">
-            <div className="text-left space-y-4">
-              {planTiers.filter(p => p.id === selectedPlan).map(p => (
-                <div key={p.id} className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold uppercase text-text-secondary">Selected Tier:</span>
-                    <span className="text-xs font-bold uppercase bg-brand-primary text-white px-2 py-0.5 rounded">
-                      {p.id}
-                    </span>
-                  </div>
-                  <ul className="space-y-1.5">
-                    {p.features.map((f, i) => (
-                      <li key={i} className="text-xs font-semibold text-brand-primary flex items-center gap-2 font-sans">
-                        <span className="w-1.5 h-1.5 rounded-full bg-brand-secondary" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+          <Card title="Workspace Features" padding="md" variant="cream">
+            <div className="text-left space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-brand-primary font-heading">
+                <ShieldCheck size={16} className="text-brand-secondary" />
+                Strict Tenant Isolation
+              </div>
+              <p className="text-[11px] text-text-secondary leading-relaxed font-sans">
+                Tenant data, vector embeddings, and API keys are strictly partitioned across PostgreSQL and Redis.
+              </p>
+
+              <div className="flex items-center gap-2 text-xs font-bold text-brand-primary font-heading pt-2">
+                <Zap size={16} className="text-brand-secondary" />
+                ML Candidate Re-Ranking
+              </div>
+              <p className="text-[11px] text-text-secondary leading-relaxed font-sans">
+                Combines 10 heuristic candidate generators in Spring Boot with high performance FastAPI Python rankers.
+              </p>
+
+              <div className="flex items-center gap-2 text-xs font-bold text-brand-primary font-heading pt-2">
+                <KeyRound size={16} className="text-brand-secondary" />
+                API Key Management
+              </div>
+              <p className="text-[11px] text-text-secondary leading-relaxed font-sans">
+                Generate and revoke scoped API credentials for catalog ingestion and real-time recommendation fetching.
+              </p>
             </div>
           </Card>
         </div>
       </div>
 
-      {/* Tiny Footer */}
+      {/* Footer */}
       <div className="max-w-4xl mx-auto w-full text-center mt-12 text-[10px] text-text-secondary">
-        Having problems registering? Consult our <a href="#" className="underline font-bold text-brand-primary">Support Desk</a>.
+        Susume Enterprise Recommendation Engine • Built for Scalable Personalization
       </div>
     </div>
   );

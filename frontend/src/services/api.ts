@@ -45,6 +45,8 @@ export interface ApiFetchOptions extends RequestInit {
   apiKey?: string;
 }
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
   const token = getAccessToken();
   const headers = new Headers(options.headers || {});
@@ -61,7 +63,11 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
 
   const { apiKey, ...fetchInit } = options;
 
-  const response = await fetch(path, {
+  const fullUrl = path.startsWith('http://') || path.startsWith('https://')
+    ? path
+    : `${BASE_URL}${path}`;
+
+  const response = await fetch(fullUrl, {
     ...fetchInit,
     headers,
   });

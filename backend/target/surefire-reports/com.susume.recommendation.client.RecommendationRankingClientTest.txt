@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.susume.recommendation.client.RecommendationRankingClientTest
--------------------------------------------------------------------------------
-Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.283 s -- in com.susume.recommendation.client.RecommendationRankingClientTest
