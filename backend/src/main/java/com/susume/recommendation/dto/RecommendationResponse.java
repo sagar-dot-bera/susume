@@ -19,4 +19,9 @@ public class RecommendationResponse {
     private UUID userId;
     private List<RecommendationItemResponse> recommendations;
     private String strategy; // "personalized" or "trending"
+    private String modelVersion; // ranker version, or "spring-baseline" when strategies ordered the items
+
+    public RecommendationResponse(UUID userId, List<RecommendationItemResponse> recommendations, String strategy) {
+        this(userId, recommendations, strategy, null);
+    }
 }

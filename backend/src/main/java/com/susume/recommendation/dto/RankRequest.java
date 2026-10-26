@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -14,6 +13,7 @@ import java.util.Map;
 @Builder
 public class RankRequest {
 
+    private String tenantId;
     private UserPayload user;
     private ContextPayload context;
     private List<RecommendationCandidate> candidates;
@@ -25,7 +25,6 @@ public class RankRequest {
     @Builder
     public static class UserPayload {
         private String id;
-        private Map<String, Object> features;
     }
 
     @Data

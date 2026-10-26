@@ -337,14 +337,15 @@ cd backend
 ## Key REST API Reference
 
 ### Recommendations & Ranking
-- `GET /api/v1/recommendations` — Returns personalized top-K recommendations for a user (candidate generation + ML re-ranking)
+- `GET /api/v1/recommendations?externalUserId=&limit=` — Returns personalized top-K recommendations for a user (candidate generation + ML re-ranking)
 - `GET /api/v1/recommendations/trending` — Returns global trending items fallback
 - `POST /api/v1/recommendations/rank` *(internal Python ML API)* — Candidate re-ranking and 32-signal feature scoring
 
 ### Catalog Items & Clickstream Telemetry
 - `POST /api/v1/items` — Register/update catalog items & publish RabbitMQ embedding event
 - `POST /api/v1/interactions` — Track user clickstream events (`VIEW`, `CLICK`, `LIKE`, `PURCHASE`)
-- `GET /api/v1/interactions/history` — Retrieve a user's interaction history timeline
+- `GET /api/v1/interactions/history?externalUserId=&interactionType=&since=&page=&limit=` — Retrieve a user's interaction history timeline, newest first
+- The same interaction endpoints are also served by the Python [`interaction-service`](interaction-service/README.md) (FastAPI, port 8003)
 - `GET /api/v1/interactions/export` *(internal, consumed by the ML training pipeline)* — Paginated bulk export of a tenant's historical interactions
 
 ---

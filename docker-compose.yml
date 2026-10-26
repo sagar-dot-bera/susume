@@ -64,14 +64,44 @@ services:
     ports:
       - "8002:8002"
     environment:
-      MODEL_PATH: /app/models/susume_ranker_v1.joblib
-      MODEL_VERSION: v1
+      MODEL_PATH: /app/models/susume_ranker_v2.joblib
       SERVICE_PORT: 8002
       LOG_LEVEL: INFO
+      # Ranking features are computed from raw events served by interaction-service.
+      INTERACTION_SERVICE_URL: http://interaction-service:8003
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
+      SNAPSHOT_TTL_SECONDS: 3600
     depends_on:
-      - postgres
+      - interaction-service
     healthcheck:
       test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  interaction-service:
+    build:
+      context: ./interaction-service
+      dockerfile: Dockerfile
+    container_name: recommendation_interaction_service
+    ports:
+      - "8003:8003"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_URL: redis://redis:6379/0
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
+      LOG_LEVEL: INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')" ]
       interval: 15s
       timeout: 5s
       retries: 5

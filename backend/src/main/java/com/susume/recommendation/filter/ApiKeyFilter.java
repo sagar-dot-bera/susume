@@ -10,6 +10,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -17,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.susume.recommendation.dto.ErrorResponse;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -64,10 +67,21 @@ public class ApiKeyFilter extends OncePerRequestFilter {
             // Set tenant context (store tenant ID for downstream use)
             TenantContext.setTenantId(tenant.getId());
 
+            // Set Spring Security Authentication so .authenticated() authorization passes
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                    tenant.getId(), null, List.of(new SimpleGrantedAuthority("ROLE_API_CLIENT")));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
             log.debug("Tenant authenticated via API key: {}", tenant.getId());
         }
 
-        filterChain.doFilter(request, response);
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            // Request threads are pooled; don't leak this tenant into the next request.
+            TenantContext.clear();
+            SecurityContextHolder.clearContext();
+        }
     }
 
     private boolean shouldApplyFilter(String requestPath) {

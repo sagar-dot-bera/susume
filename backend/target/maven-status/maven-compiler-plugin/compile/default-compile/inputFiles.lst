@@ -19,11 +19,13 @@ D:\Susume\backend\src\main\java\com\susume\recommendation\dto\RecommendationCont
 D:\Susume\backend\src\main\java\com\susume\recommendation\strategy\SimilarItemsStrategy.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\TenantRegistrationRequest.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\LoginResponse.java
+D:\Susume\backend\src\main\java\com\susume\recommendation\service\RecommendationCacheEvictor.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\entity\Tenant.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\service\ApiKeyService.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\CreateItemRequest.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\ForgotPasswordRequest.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\TenantRegistrationResponse.java
+D:\Susume\backend\src\main\java\com\susume\recommendation\dto\InteractionExportItemResponse.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\config\SecurityConfiguration.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\EmbedResponse.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\repository\RecommendationImpressionRepository.java
@@ -36,6 +38,7 @@ D:\Susume\backend\src\main\java\com\susume\recommendation\dto\NewAdminAccountReq
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\ApiKeyResponse.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\ErrorResponse.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\service\TenantService.java
+D:\Susume\backend\src\main\java\com\susume\recommendation\dto\InteractionExportResponse.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\controller\AuthController.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\entity\Interaction.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\AcceptInvitationRequest.java
@@ -97,9 +100,10 @@ D:\Susume\backend\src\main\java\com\susume\recommendation\config\RestClientConfi
 D:\Susume\backend\src\main\java\com\susume\recommendation\entity\AuthToken.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\controller\InteractionController.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\controller\ItemController.java
-D:\Susume\backend\src\main\java\com\susume\recommendation\dto\InteractionHistoryRequest.java
+D:\Susume\backend\src\main\java\com\susume\recommendation\service\PersonalizedRecommendationProvider.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\InteractionResponse.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\repository\UserRepository.java
+D:\Susume\backend\src\main\java\com\susume\recommendation\service\ImpressionLogger.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\RegisterRequest.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\service\RecommendationService.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\service\InteractionService.java
