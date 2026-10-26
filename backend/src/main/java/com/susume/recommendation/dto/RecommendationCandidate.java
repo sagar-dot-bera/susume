@@ -14,6 +14,4 @@ import java.util.Map;
 public class RecommendationCandidate {
     private String itemId;
     private Map<String, Double> strategyScores;
-    private Map<String, Object> itemFeatures;
-    private Map<String, Object> userItemFeatures;
 }

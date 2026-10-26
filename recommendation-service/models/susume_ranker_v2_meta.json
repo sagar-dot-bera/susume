@@ -1,0 +1,214 @@
+{
+  "name": "susume-ranker",
+  "version": "v2",
+  "algorithm": "LightGBM LGBMRanker (lambdarank)",
+  "featureVersion": "v2",
+  "featureNames": [
+    "contentBasedScore",
+    "collaborativeFilteringScore",
+    "frequentlyBoughtTogetherScore",
+    "hybridScore",
+    "personalizedScore",
+    "popularityScore",
+    "randomDiscoveryScore",
+    "ruleBasedScore",
+    "similarItemsScore",
+    "trendingScore",
+    "user_totalViews",
+    "user_totalClicks",
+    "user_totalLikes",
+    "user_totalPurchases",
+    "user_totalInteractions",
+    "user_interactionsLast24Hours",
+    "user_interactionsLast7Days",
+    "user_interactionsLast30Days",
+    "item_itemPopularity",
+    "item_recentViews",
+    "item_recentClicks",
+    "item_recentLikes",
+    "item_recentPurchases",
+    "item_itemAge",
+    "user_item_previousViews",
+    "user_item_previousClicks",
+    "user_item_previousLikes",
+    "user_item_previousPurchases",
+    "user_item_timeSinceLastInteraction",
+    "context_surfaceCode",
+    "context_hour",
+    "context_dayOfWeek",
+    "user_totalCarts",
+    "item_recentCarts",
+    "user_item_previousCarts"
+  ],
+  "trainedAt": "2026-10-26T01:40:30.194685",
+  "bestIteration": 151,
+  "ndcgAt10": 0.2602,
+  "recallAt10": 0.3252,
+  "hitRateAt10": 0.4174,
+  "mrrAt10": 0.28,
+  "candidateRecall": 0.3655,
+  "testResults": {
+    "Popularity": {
+      "ndcgAt10": 0.0043,
+      "recallAt10": 0.0082,
+      "hitRateAt10": 0.0147,
+      "mrrAt10": 0.004,
+      "candidateRecall": 0.3655
+    },
+    "Trending (last 7 days)": {
+      "ndcgAt10": 0.0048,
+      "recallAt10": 0.0073,
+      "hitRateAt10": 0.0144,
+      "mrrAt10": 0.0055,
+      "candidateRecall": 0.3655
+    },
+    "Similar items (session co-occurrence)": {
+      "ndcgAt10": 0.1312,
+      "recallAt10": 0.1975,
+      "hitRateAt10": 0.2591,
+      "mrrAt10": 0.1293,
+      "candidateRecall": 0.3655
+    },
+    "Collaborative filtering (item-item)": {
+      "ndcgAt10": 0.1358,
+      "recallAt10": 0.2065,
+      "hitRateAt10": 0.2728,
+      "mrrAt10": 0.1328,
+      "candidateRecall": 0.3655
+    },
+    "Frequently bought together": {
+      "ndcgAt10": 0.0379,
+      "recallAt10": 0.0707,
+      "hitRateAt10": 0.1059,
+      "mrrAt10": 0.0363,
+      "candidateRecall": 0.3655
+    },
+    "Personalized (recency-weighted history)": {
+      "ndcgAt10": 0.1697,
+      "recallAt10": 0.1931,
+      "hitRateAt10": 0.2673,
+      "mrrAt10": 0.1994,
+      "candidateRecall": 0.3655
+    },
+    "Hand-weighted blend (fallback heuristic)": {
+      "ndcgAt10": 0.1425,
+      "recallAt10": 0.224,
+      "hitRateAt10": 0.3035,
+      "mrrAt10": 0.1399,
+      "candidateRecall": 0.3655
+    },
+    "Logistic regression (pointwise)": {
+      "ndcgAt10": 0.2224,
+      "recallAt10": 0.2812,
+      "hitRateAt10": 0.3684,
+      "mrrAt10": 0.242,
+      "candidateRecall": 0.3655
+    },
+    "LightGBM LambdaMART (all features)": {
+      "ndcgAt10": 0.2602,
+      "recallAt10": 0.3252,
+      "hitRateAt10": 0.4174,
+      "mrrAt10": 0.28,
+      "candidateRecall": 0.3655
+    }
+  },
+  "ablation": {
+    "Strategy scores only": {
+      "ndcgAt10": 0.258,
+      "recallAt10": 0.3247,
+      "hitRateAt10": 0.4169,
+      "mrrAt10": 0.2769,
+      "candidateRecall": 0.3655
+    },
+    "All features": {
+      "ndcgAt10": 0.2602,
+      "recallAt10": 0.3252,
+      "hitRateAt10": 0.4174,
+      "mrrAt10": 0.28,
+      "candidateRecall": 0.3655
+    }
+  },
+  "featureImportance": {
+    "collaborativeFilteringScore": 0.2942,
+    "personalizedScore": 0.2687,
+    "user_item_timeSinceLastInteraction": 0.0944,
+    "similarItemsScore": 0.0922,
+    "popularityScore": 0.0534,
+    "item_recentViews": 0.048,
+    "item_itemPopularity": 0.0284,
+    "user_item_previousViews": 0.0203,
+    "trendingScore": 0.0199,
+    "user_totalViews": 0.0146,
+    "user_interactionsLast30Days": 0.0132,
+    "user_interactionsLast7Days": 0.0131,
+    "user_interactionsLast24Hours": 0.0111,
+    "item_itemAge": 0.007,
+    "frequentlyBoughtTogetherScore": 0.004,
+    "user_item_previousCarts": 0.0029,
+    "item_recentCarts": 0.0028,
+    "user_totalInteractions": 0.0026,
+    "context_hour": 0.0024,
+    "item_recentPurchases": 0.0024,
+    "user_totalCarts": 0.002,
+    "context_dayOfWeek": 0.0016,
+    "user_totalPurchases": 0.0006,
+    "user_item_previousPurchases": 0.0002
+  },
+  "dataset": {
+    "source": "RetailRocket e-commerce events",
+    "periods": {
+      "train": [
+        "2015-07-10",
+        "2015-08-21"
+      ],
+      "val": [
+        "2015-08-21",
+        "2015-09-04"
+      ],
+      "test": [
+        "2015-09-04",
+        "2015-09-18"
+      ]
+    },
+    "queries": {
+      "train": 18925,
+      "val": 3858,
+      "test": 10000
+    },
+    "rows": {
+      "train": 1070939,
+      "val": 209643,
+      "test": 527601
+    },
+    "config": {
+      "train_days": 42,
+      "val_days": 14,
+      "test_days": 14,
+      "label_window_hours": 24,
+      "lookback_days": 42,
+      "candidates_per_strategy": 20,
+      "history_items": 5,
+      "personalized_half_life_hours": 72.0,
+      "max_user_events": 500,
+      "max_queries": {
+        "train": 40000,
+        "val": 8000,
+        "test": 10000
+      },
+      "seed": 42
+    }
+  },
+  "params": {
+    "objective": "lambdarank",
+    "n_estimators": 1000,
+    "learning_rate": 0.05,
+    "num_leaves": 63,
+    "min_child_samples": 100,
+    "subsample": 0.8,
+    "subsample_freq": 1,
+    "colsample_bytree": 0.8,
+    "lambdarank_truncation_level": 20,
+    "random_state": 42,
+    "verbose": -1
+  }
+}

@@ -10,7 +10,9 @@ com\susume\recommendation\service\RecommendationFacade.class
 com\susume\recommendation\entity\User.class
 com\susume\recommendation\dto\RecommendationResponse$RecommendationResponseBuilder.class
 com\susume\recommendation\dto\RecommendationContext.class
+com\susume\recommendation\config\RedisConfig$1.class
 com\susume\recommendation\strategy\HybridStrategy.class
+com\susume\recommendation\dto\InteractionExportResponse.class
 com\susume\recommendation\dto\ResendVerificationTokenRequest.class
 com\susume\recommendation\dto\RecommendationCandidate$RecommendationCandidateBuilder.class
 com\susume\recommendation\dto\RecommendationContext$RecommendationContextBuilder.class
@@ -86,6 +88,7 @@ com\susume\recommendation\entity\RecommendationImpression$RecommendationImpressi
 com\susume\recommendation\controller\InteractionController.class
 com\susume\recommendation\service\CurrentUserResolver.class
 com\susume\recommendation\repository\InteractionRepository.class
+com\susume\recommendation\service\ImpressionLogger.class
 com\susume\recommendation\service\StatesService.class
 com\susume\recommendation\service\CandidateAggregator.class
 com\susume\recommendation\service\TenantRegistrationData.class
@@ -108,11 +111,13 @@ com\susume\recommendation\config\RestClientConfiguration.class
 com\susume\recommendation\dto\RankResponse$RankedRecommendation$RankedRecommendationBuilder.class
 com\susume\recommendation\exception\EmailNotVerifiedException.class
 com\susume\recommendation\dto\InvitationValidationResponse.class
+com\susume\recommendation\service\RecommendationFacade$MlRanking.class
 com\susume\recommendation\service\RefreshTokenService.class
 com\susume\recommendation\controller\GlobalExceptionHandler.class
 com\susume\recommendation\exception\InvitationExpiredException.class
 com\susume\recommendation\dto\RecommendationCandidate.class
 com\susume\recommendation\dto\ApiKeyResponse.class
+com\susume\recommendation\dto\InteractionExportItemResponse.class
 com\susume\recommendation\service\AuthTokenService.class
 com\susume\recommendation\controller\AuthController.class
 com\susume\recommendation\entity\AuthTokenTypes.class
@@ -128,7 +133,6 @@ com\susume\recommendation\framework\RecommendationStrategyResolver.class
 com\susume\recommendation\framework\RecommendationFilter.class
 com\susume\recommendation\dto\LoginResponse.class
 com\susume\recommendation\dto\AuthResponse.class
-com\susume\recommendation\dto\InteractionHistoryRequest.class
 com\susume\recommendation\exception\FailedToFindItemException.class
 com\susume\recommendation\strategy\PersonalizedStrategy.class
 com\susume\recommendation\dto\RankResponse$ModelMetadata.class
@@ -176,12 +180,14 @@ com\susume\recommendation\entity\RecommendationAlgorithm.class
 com\susume\recommendation\dto\RecommendationResult$RecommendationResultBuilder.class
 com\susume\recommendation\exception\InvalidCredentialsException.class
 com\susume\recommendation\dto\InteractionResponse.class
+com\susume\recommendation\service\RecommendationCacheEvictor.class
 com\susume\recommendation\dto\ApiKeyDto.class
 com\susume\recommendation\service\HashUtil.class
 com\susume\recommendation\service\TenantService.class
 com\susume\recommendation\dto\StrategyInfoResponse$StrategyInfoResponseBuilder.class
 com\susume\recommendation\service\ApiKeyService.class
 com\susume\recommendation\strategy\CollaborativeFilteringStrategy.class
+com\susume\recommendation\service\PersonalizedRecommendationProvider.class
 com\susume\recommendation\entity\Interaction.class
 com\susume\recommendation\dto\RegisterRequest.class
 com\susume\recommendation\util\CryptoUtil.class

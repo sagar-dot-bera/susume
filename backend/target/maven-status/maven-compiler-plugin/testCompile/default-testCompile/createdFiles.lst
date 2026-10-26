@@ -1,7 +1,13 @@
-com\susume\recommendation\service\ItemServiceTest.class
 com\susume\recommendation\strategy\StrategyTests.class
+com\susume\recommendation\service\RecommendationCacheTest.class
+com\susume\recommendation\service\RecommendationFacadeTest.class
+com\susume\recommendation\service\RecommendationCacheTest$CacheTestConfig.class
+com\susume\recommendation\client\RecommendationRankingClientTest.class
+com\susume\recommendation\config\RedisConfigTest.class
+com\susume\recommendation\service\ItemServiceTest.class
 com\susume\recommendation\util\VectorUtilsTest.class
 com\susume\recommendation\filter\ApiKeyFilterTest.class
 com\susume\recommendation\util\MetadataConcatenatorTest.class
+com\susume\recommendation\controller\RecommendationControllerTest.class
+com\susume\recommendation\controller\InteractionControllerTest.class
 com\susume\recommendation\service\CandidateAggregatorTest.class
-com\susume\recommendation\client\RecommendationRankingClientTest.class

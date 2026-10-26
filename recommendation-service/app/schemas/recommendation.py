@@ -1,26 +1,24 @@
-from typing import Dict, List, Optional, Any
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
 class CandidateItem(BaseModel):
+    """An item the backend's strategies proposed. Only the id is used: features are computed here."""
     itemId: str
-    strategyScores: Dict[str, float] = Field(default_factory=dict)
-    itemFeatures: Dict[str, Any] = Field(default_factory=dict)
-    userItemFeatures: Dict[str, Any] = Field(default_factory=dict)
 
 
 class UserPayload(BaseModel):
-    id: Optional[str] = "anonymous"
-    features: Dict[str, Any] = Field(default_factory=dict)
+    id: Optional[str] = None
 
 
 class ContextPayload(BaseModel):
     surface: Optional[str] = "homepage"
-    hour: Optional[int] = 12
-    dayOfWeek: Optional[int] = 1
+    hour: Optional[int] = None
+    dayOfWeek: Optional[int] = None
 
 
 class RankRequest(BaseModel):
+    tenantId: Optional[str] = None
     user: Optional[UserPayload] = None
     context: Optional[ContextPayload] = None
     candidates: List[CandidateItem] = Field(default_factory=list)
@@ -40,3 +38,7 @@ class ModelMetadata(BaseModel):
 class RankResponse(BaseModel):
     recommendations: List[RankedItem]
     model: ModelMetadata
+    # "ml": model scores on training-identical features; "cold_start_popularity": the user has
+    # no history yet, so items are ordered by tenant popularity.
+    rankingMode: str
+    candidateCount: int

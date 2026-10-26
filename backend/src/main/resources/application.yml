@@ -31,6 +31,9 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+      # Fail fast when Redis is unreachable so the cache error handler can fall back to computing results.
+      timeout: ${REDIS_TIMEOUT:2s}
+      connect-timeout: ${REDIS_CONNECT_TIMEOUT:2s}
       ssl:
         enabled: ${REDIS_SSL_ENABLED:false}
       repositories:
@@ -69,6 +72,6 @@ recommendation:
   ml:
     enabled: ${RECOMMENDATION_ML_ENABLED:true}
     service-url: ${RECOMMENDATION_SERVICE_URL:http://localhost:8002}
-    timeout-ms: 500
+    timeout-ms: ${RECOMMENDATION_ML_TIMEOUT_MS:500}
 
 

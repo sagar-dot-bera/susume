@@ -5,7 +5,6 @@ import com.susume.recommendation.dto.RecommendationRequest;
 import com.susume.recommendation.dto.RecommendationResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -16,25 +15,26 @@ import java.util.UUID;
 public class RecommendationService {
 
     private final RecommendationFacade recommendationFacade;
+    private final PersonalizedRecommendationProvider personalizedProvider;
+    private final ImpressionLogger impressionLogger;
     private final int maxRecommendationLimit;
 
     public RecommendationService(
             RecommendationFacade recommendationFacade,
+            PersonalizedRecommendationProvider personalizedProvider,
+            ImpressionLogger impressionLogger,
             @Value("${recommendation.max-limit:50}") int maxRecommendationLimit) {
         this.recommendationFacade = recommendationFacade;
+        this.personalizedProvider = personalizedProvider;
+        this.impressionLogger = impressionLogger;
         this.maxRecommendationLimit = maxRecommendationLimit;
     }
 
-    @Cacheable(value = "recommendation", key = "#tenantId" + "#request.getExternalUserId()")
+    /** Served to an end user: impressions are logged whether or not the result came from cache. */
     public RecommendationResponse getRecommendations(RecommendationRequest request, UUID tenantId) {
-        int cappedLimit = Math.min(request.limit() > 0 ? request.limit() : 10, maxRecommendationLimit);
-        RecommendationContext context = RecommendationContext.builder()
-                .tenantId(tenantId)
-                .externalUserId(request.externalUserId())
-                .limit(cappedLimit)
-                .build();
-
-        return recommendationFacade.executeRecommendation("personalized", context);
+        RecommendationResponse response = personalizedProvider.get(request, tenantId);
+        impressionLogger.log(tenantId, request.externalUserId(), response);
+        return response;
     }
 
     public RecommendationResponse getTrending(UUID tenantId, int limit, int days) {
@@ -45,7 +45,9 @@ public class RecommendationService {
                 .tenantConfig(Map.of("days", days))
                 .build();
 
-        return recommendationFacade.executeRecommendation("trending", context);
+        RecommendationResponse response = recommendationFacade.executeRecommendation("trending", context);
+        impressionLogger.log(tenantId, null, response);
+        return response;
     }
 
     public RecommendationResponse getRecommendationsByStrategy(String strategyName, RecommendationContext context) {

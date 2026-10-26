@@ -1,0 +1,7 @@
+data/
+# RetailRocket dataset (~1 GB, from Kaggle) and dataset caches built from it; never commit.
+data/retailrocket/
+data/cache/
+__pycache__/
+.pytest_cache/
+.venv/

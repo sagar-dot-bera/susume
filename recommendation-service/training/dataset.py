@@ -1,42 +1,61 @@
+import os
 import logging
 import pandas as pd
 import numpy as np
-from typing import Any, Optional, cast
+import httpx
+from typing import Optional
 from datetime import datetime, timedelta
 
 logger = logging.getLogger("training")
 
+DEFAULT_PAGE_LIMIT = 500
 
-def load_historical_interactions(db_url: Optional[str] = None) -> pd.DataFrame:
+
+def load_historical_interactions(backend_url: Optional[str] = None, api_key: Optional[str] = None) -> pd.DataFrame:
     """
-    Loads historical interaction dataset from PostgreSQL using SQLAlchemy ORM or generates
-    a structured synthetic interaction dataset for baseline model training.
+    Loads historical interaction dataset by paging through the Spring Boot backend's
+    interaction export API, or generates a structured synthetic interaction dataset
+    for baseline model training if the backend is unavailable.
+
+    The recommendation-service holds no database connection of its own; all interaction
+    data lives in and is served by the Spring Boot backend.
     """
+    backend_url = backend_url or os.getenv("BACKEND_SERVICE_URL", "http://localhost:8080")
+    api_key = api_key or os.getenv("BACKEND_API_KEY")
+
     try:
-        from sqlalchemy import select, create_engine
-        from app.db import Interaction, sync_engine
+        if not api_key:
+            raise RuntimeError("BACKEND_API_KEY is not set; cannot authenticate with backend export API.")
 
-        engine = create_engine(db_url, pool_pre_ping=True) if db_url else sync_engine
-        try:
-            with engine.connect() as conn:
-                stmt = select(
-                    Interaction.id,
-                    Interaction.tenant_id,
-                    Interaction.external_user_id,
-                    Interaction.external_item_id,
-                    Interaction.interaction_type,
-                    Interaction.timestamp
-                ).order_by(Interaction.timestamp.asc())
-                df = pd.read_sql_query(cast(Any, stmt),cast(Any,conn))
-        finally:
-            if db_url:
-                engine.dispose()
+        records = []
+        page = 0
+        with httpx.Client(base_url=backend_url, headers={"X-API-KEY": api_key}, timeout=30.0) as client:
+            while True:
+                response = client.get(
+                    "/api/v1/interactions/export",
+                    params={"page": page, "limit": DEFAULT_PAGE_LIMIT},
+                )
+                response.raise_for_status()
+                body = response.json()
+                records.extend(body["data"])
 
-        if df is not None and not df.empty:
-            logger.info(f"Loaded {len(df)} historical interactions from database via SQLAlchemy.")
+                if page + 1 >= body["totalPages"]:
+                    break
+                page += 1
+
+        df = pd.DataFrame(records)
+        if not df.empty:
+            df["timestamp"] = pd.to_datetime(df["timestamp"])
+            df = df.rename(columns={
+                "externalUserId": "external_user_id",
+                "externalItemId": "external_item_id",
+                "interactionType": "interaction_type",
+            })
+            df = df.sort_values(by="timestamp").reset_index(drop=True)
+            logger.info(f"Loaded {len(df)} historical interactions from backend export API.")
             return df
     except Exception as e:
-        logger.warning(f"Could not load interactions from database via SQLAlchemy ({e}). Generating synthetic interaction dataset.")
+        logger.warning(f"Could not load interactions from backend export API ({e}). Generating synthetic interaction dataset.")
 
     # Generate synthetic historical interaction dataset for training
     rng = np.random.default_rng(42)
@@ -50,7 +69,7 @@ def load_historical_interactions(db_url: Optional[str] = None) -> pd.DataFrame:
     weights = [0.5, 0.3, 0.15, 0.05]
 
     start_date = datetime.now() - timedelta(days=60)
-    
+
     user_choices = rng.choice(users, size=n_interactions)
     item_choices = rng.choice(items, size=n_interactions)
     type_choices = rng.choice(types, size=n_interactions, p=weights)
@@ -72,4 +91,3 @@ def load_historical_interactions(db_url: Optional[str] = None) -> pd.DataFrame:
     df = df.sort_values(by="timestamp").reset_index(drop=True)
     logger.info(f"Generated synthetic historical dataset with {len(df)} interactions.")
     return df
-

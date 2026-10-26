@@ -42,6 +42,7 @@ public class RecommendationHistoryService {
         // Create and save RecommendationSession
         RecommendationSession session = RecommendationSession.builder()
                 .tenantId(tenantId)
+                .userId(externalUserId != null ? UUID.fromString(externalUserId) : null)
                 .algorithm(strategy)
                 .latencyMs(latency)
                 .generatedAt(Instant.now())

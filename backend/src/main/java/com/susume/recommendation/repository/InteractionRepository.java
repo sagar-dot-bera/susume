@@ -5,6 +5,7 @@ import com.susume.recommendation.entity.InteractionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface InteractionRepository extends JpaRepository<Interaction, UUID> {
+public interface InteractionRepository extends JpaRepository<Interaction, UUID>, JpaSpecificationExecutor<Interaction> {
 
         /**
          * Find all interactions for a user within tenant (paginated).

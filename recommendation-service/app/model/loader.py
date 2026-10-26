@@ -4,6 +4,7 @@ import logging
 import joblib
 import numpy as np
 from typing import Tuple, Dict, Any, Optional
+from app.ranking.features import FEATURE_NAMES, FEATURE_VERSION
 
 logger = logging.getLogger("recommendation_service")
 
@@ -14,9 +15,8 @@ class DummyFallbackModel:
     Computes a weighted linear combination of candidate strategy scores.
     """
     def __init__(self):
-        # Weights for 32 feature vector
-        # First 10 strategy scores get heavy weights
-        self.weights = np.zeros(32, dtype=np.float32)
+        # Only the 10 strategy scores (the first features) carry weight
+        self.weights = np.zeros(len(FEATURE_NAMES), dtype=np.float32)
         self.weights[0] = 0.20  # contentBased
         self.weights[1] = 0.25  # collaborativeFiltering
         self.weights[2] = 0.10  # frequentlyBoughtTogether
@@ -39,30 +39,40 @@ class DummyFallbackModel:
 
 class ModelLoader:
     def __init__(self, model_path: Optional[str] = None):
-        self.model_path = model_path or os.getenv("MODEL_PATH", "models/susume_ranker_v1.joblib")
+        self.model_path = model_path or os.getenv("MODEL_PATH", "models/susume_ranker_v2.joblib")
         self.model = None
-        self.metadata = {
-            "name": "susume-ranker",
-            "version": os.getenv("MODEL_VERSION", "v1-fallback"),
-            "featureVersion": "v1",
-        }
+        self.metadata = self._fallback_metadata()
         self.load_model()
 
+    @staticmethod
+    def _fallback_metadata() -> Dict[str, Any]:
+        return {"name": "susume-ranker", "version": "heuristic-fallback", "featureVersion": FEATURE_VERSION}
+
+    def _use_fallback(self):
+        self.model = DummyFallbackModel()
+        self.metadata = self._fallback_metadata()
+
     def load_model(self):
-        if os.path.exists(self.model_path):
-            try:
-                self.model = joblib.load(self.model_path)
-                logger.info(f"Successfully loaded trained ML model from {self.model_path}")
-                meta_path = self.model_path.replace(".joblib", "_meta.json")
-                if os.path.exists(meta_path):
-                    with open(meta_path, "r", encoding="utf-8") as f:
-                        self.metadata = json.load(f)
-            except Exception as e:
-                logger.error(f"Failed to load model from {self.model_path}: {e}. Initializing dummy fallback model.")
-                self.model = DummyFallbackModel()
-        else:
+        if not os.path.exists(self.model_path):
             logger.warning(f"No model artifact found at {self.model_path}. Initializing baseline heuristic ranker.")
-            self.model = DummyFallbackModel()
+            self._use_fallback()
+            return
+
+        meta_path = self.model_path.replace(".joblib", "_meta.json")
+        try:
+            with open(meta_path, "r", encoding="utf-8") as f:
+                metadata = json.load(f)
+            if metadata.get("featureNames") != FEATURE_NAMES:
+                raise ValueError(
+                    f"model was trained on feature version {metadata.get('featureVersion')!r}, "
+                    f"service builds {FEATURE_VERSION!r}"
+                )
+            self.model = joblib.load(self.model_path)
+            self.metadata = metadata
+            logger.info(f"Successfully loaded trained ML model {metadata.get('version')} from {self.model_path}")
+        except Exception as e:
+            logger.error(f"Failed to load model from {self.model_path}: {e}. Initializing dummy fallback model.")
+            self._use_fallback()
 
     def get_model(self) -> Tuple[Any, Dict[str, Any]]:
         if self.model is None:

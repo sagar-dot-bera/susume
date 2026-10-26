@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -84,12 +85,22 @@ class ApiKeyFilterTest {
         FilterChain filterChain = mock(FilterChain.class);
 
         when(tenantService.findByApiKeyHash(hashedKey)).thenReturn(Optional.of(tenant));
+        doAnswer(inv -> {
+            // Inside the chain: tenant set, and Spring Security sees an authenticated principal
+            assertEquals(tenantId, TenantContext.getTenantId());
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            assertNotNull(auth);
+            assertTrue(auth.isAuthenticated());
+            assertEquals(tenantId, auth.getPrincipal());
+            return null;
+        }).when(filterChain).doFilter(request, response);
 
         apiKeyFilter.doFilter(request, response, filterChain);
 
-        // Verify tenant context was set
-        assertEquals(tenantId, TenantContext.getTenantId());
         verify(filterChain).doFilter(request, response);
+        // After the request: nothing leaks into the next request on this pooled thread
+        assertNull(TenantContext.getTenantId());
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
     @Test

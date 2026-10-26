@@ -15,6 +15,9 @@ public class RankResponse {
 
     private List<RankedRecommendation> recommendations;
     private ModelMetadata model;
+    // "ml" or "cold_start_popularity"
+    private String rankingMode;
+    private int candidateCount;
 
     @Data
     @NoArgsConstructor
