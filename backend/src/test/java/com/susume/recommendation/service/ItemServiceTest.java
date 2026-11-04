@@ -1,5 +1,6 @@
 package com.susume.recommendation.service;
 
+import com.susume.recommendation.cache.RecommendationCache;
 import com.susume.recommendation.client.EmbeddingServiceClient;
 import com.susume.recommendation.entity.Item;
 import com.susume.recommendation.repository.ItemRepository;
@@ -27,12 +28,15 @@ class ItemServiceTest {
     @Mock
     private ItemEventPublisher itemEventPublisher;
 
+    @Mock
+    private RecommendationCache recommendationCache;
+
     private ItemService itemService;
     private UUID tenantId;
 
     @BeforeEach
     void setUp() {
-        itemService = new ItemService(itemRepository, embeddingServiceClient, itemEventPublisher);
+        itemService = new ItemService(itemRepository, embeddingServiceClient, itemEventPublisher, recommendationCache);
         tenantId = UUID.randomUUID();
     }
 
@@ -57,6 +61,7 @@ class ItemServiceTest {
         assertEquals(tenantId, result.getTenantId());
         verify(itemEventPublisher).publish(any());
         verify(itemRepository).save(any());
+        verify(recommendationCache).invalidateTenant(tenantId);
     }
 
     @Test
@@ -136,6 +141,7 @@ class ItemServiceTest {
 
         assertEquals("INACTIVE", item.getStatus());
         verify(itemRepository).save(item);
+        verify(recommendationCache).invalidateTenant(tenantId);
     }
 
     @Test

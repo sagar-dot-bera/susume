@@ -37,12 +37,12 @@ app/
   service.py           business rules (item must exist and be ACTIVE, cache eviction)
   repository.py        SQLAlchemy queries; filtering, ordering and pagination in SQL
   models.py / schemas.py   ORM mappings / Pydantic request & response models
-  cache.py             Redis eviction of the backend's cached recommendations
+  cache.py             invalidation of the backend's cached recommendations (user generation token)
 ```
 
 - **Multi-tenant by construction.** The tenant comes only from the API key (SHA-256 hashed, the same as the backend), never from the request body, and every query is scoped by it.
 - **Shared schema.** Postgres tables are owned by the backend's Flyway migrations. This service maps only the columns it needs and never runs DDL.
-- **Cache consistency.** Recording an interaction evicts that user's cached recommendations from Redis (the same key the Spring cache uses). If Redis is down, the request still succeeds and is logged; the entry expires on its own TTL.
+- **Cache consistency.** Recording an interaction replaces the user's generation token in Redis (`reco:{tenant}:user:{user}:gen`), which every cached personalized list for that user is keyed by, so they all stop being served. If Redis is down, the request still succeeds and is logged; the entries expire on their own TTL. See [docs/recommendation-cache.md](../docs/recommendation-cache.md).
 - **Testable.** `create_app()` accepts an engine and a cache, so the tests run against in-memory SQLite and a fake cache, with no Docker needed.
 
 ## Running

@@ -1,5 +1,6 @@
 package com.susume.recommendation.service;
 
+import com.susume.recommendation.cache.RecommendationCache;
 import com.susume.recommendation.dto.InteractionExportItemResponse;
 import com.susume.recommendation.dto.InteractionHistoryItemResponse;
 import com.susume.recommendation.dto.RecordInteractionRequest;
@@ -28,13 +29,13 @@ public class InteractionService {
 
     private final InteractionRepository interactionRepository;
     private final ItemRepository itemRepository;
-    private final RecommendationCacheEvictor recommendationCacheEvictor;
+    private final RecommendationCache recommendationCache;
 
     public InteractionService(InteractionRepository interactionRepository, ItemRepository itemRepository,
-            RecommendationCacheEvictor recommendationCacheEvictor) {
+            RecommendationCache recommendationCache) {
         this.interactionRepository = interactionRepository;
         this.itemRepository = itemRepository;
-        this.recommendationCacheEvictor = recommendationCacheEvictor;
+        this.recommendationCache = recommendationCache;
     }
 
     /**
@@ -66,8 +67,9 @@ public class InteractionService {
         Interaction savedInteraction = interactionRepository.save(interaction);
         log.info("Interaction recorded: {} for tenant: {}", savedInteraction.getId(), tenantId);
 
-        // The user's behaviour changed, so all of their cached recommendation lists are stale.
-        recommendationCacheEvictor.evictUser(tenantId, recordInteractionRequest.externalUserId);
+        // The user's behaviour changed, so all of their cached recommendation lists are stale
+        // (invalidated once this transaction commits).
+        recommendationCache.invalidateUser(tenantId, recordInteractionRequest.externalUserId);
 
         return savedInteraction;
     }

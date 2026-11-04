@@ -8,7 +8,6 @@ D:\Susume\backend\src\main\java\com\susume\recommendation\filter\JwtFilter.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\service\TenantRegistrationData.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\service\AuthMailService.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\strategy\PersonalizedStrategy.java
-D:\Susume\backend\src\main\java\com\susume\recommendation\config\RedisConfig.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\client\EmbeddingServiceClient.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\ItemListResponse.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\service\ItemService.java
@@ -19,7 +18,6 @@ D:\Susume\backend\src\main\java\com\susume\recommendation\dto\RecommendationCont
 D:\Susume\backend\src\main\java\com\susume\recommendation\strategy\SimilarItemsStrategy.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\TenantRegistrationRequest.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\LoginResponse.java
-D:\Susume\backend\src\main\java\com\susume\recommendation\service\RecommendationCacheEvictor.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\entity\Tenant.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\service\ApiKeyService.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\CreateItemRequest.java
@@ -31,6 +29,7 @@ D:\Susume\backend\src\main\java\com\susume\recommendation\dto\EmbedResponse.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\repository\RecommendationImpressionRepository.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\exception\TenantNotFoundException.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\entity\User.java
+D:\Susume\backend\src\main\java\com\susume\recommendation\cache\RecommendationCacheKeys.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\util\CryptoUtil.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\util\MetadataConcatenator.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\entity\InteractionType.java
@@ -79,6 +78,7 @@ D:\Susume\backend\src\main\java\com\susume\recommendation\dto\InvitationValidati
 D:\Susume\backend\src\main\java\com\susume\recommendation\exception\UserIdentityAlreadyExistsException.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\InvitationResponse.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\entity\RecommendationResult.java
+D:\Susume\backend\src\main\java\com\susume\recommendation\cache\RecommendationCacheProperties.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\util\VectorUtils.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\framework\RankingEngine.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\exception\UserNotFoundException.java
@@ -100,7 +100,6 @@ D:\Susume\backend\src\main\java\com\susume\recommendation\config\RestClientConfi
 D:\Susume\backend\src\main\java\com\susume\recommendation\entity\AuthToken.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\controller\InteractionController.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\controller\ItemController.java
-D:\Susume\backend\src\main\java\com\susume\recommendation\service\PersonalizedRecommendationProvider.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\InteractionResponse.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\repository\UserRepository.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\service\ImpressionLogger.java
@@ -114,6 +113,7 @@ D:\Susume\backend\src\main\java\com\susume\recommendation\dto\ResetPasswordReque
 D:\Susume\backend\src\main\java\com\susume\recommendation\repository\TenantInvitationRepository.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\framework\RecommendationFilter.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\strategy\RuleBasedStrategy.java
+D:\Susume\backend\src\main\java\com\susume\recommendation\cache\RedisRecommendationCacheStore.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\strategy\CollaborativeFilteringStrategy.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\entity\Item.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\ApiKeyDto.java
@@ -127,7 +127,9 @@ D:\Susume\backend\src\main\java\com\susume\recommendation\exception\EmbeddingSer
 D:\Susume\backend\src\main\java\com\susume\recommendation\exception\RefreshTokenNotFoundException.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\service\EmailSenderService.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\entity\UserRole.java
+D:\Susume\backend\src\main\java\com\susume\recommendation\cache\RecommendationCache.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\exception\EmailNotVerifiedException.java
+D:\Susume\backend\src\main\java\com\susume\recommendation\cache\RecommendationCacheStore.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\config\JwtConfiguration.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\exception\InvitationNotFoundException.java
 D:\Susume\backend\src\main\java\com\susume\recommendation\dto\RecommendationResponse.java

@@ -45,7 +45,9 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/v1/auth/forgot-password").permitAll()
                         .requestMatchers("/api/v1/auth/reset-password").permitAll()
                         .requestMatchers("/api/v1/invitations/**").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        // Metrics (cache hit rate, latency, DB pool) are for operators only.
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         // API key protected endpoints
                         .requestMatchers("/api/v1/items/**").authenticated()
                         .requestMatchers("/api/v1/interactions/**").authenticated()

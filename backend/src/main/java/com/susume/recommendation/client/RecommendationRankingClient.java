@@ -21,6 +21,7 @@ public class RecommendationRankingClient {
     private final RestTemplate restTemplate;
     private final String rankingServiceUrl;
     private final boolean mlRankingEnabled;
+    private volatile String lastModelVersion = "none";
 
     public RecommendationRankingClient(
             RestTemplateBuilder restTemplateBuilder,
@@ -50,6 +51,9 @@ public class RecommendationRankingClient {
             RankResponse response = restTemplate.postForObject(targetUrl, entity, RankResponse.class);
 
             if (response != null && response.getRecommendations() != null) {
+                if (response.getModel() != null && response.getModel().getVersion() != null) {
+                    lastModelVersion = response.getModel().getVersion();
+                }
                 return Optional.of(response);
             }
         } catch (Exception e) {
@@ -58,5 +62,13 @@ public class RecommendationRankingClient {
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * Version of the model the ranker last served, or "none" before the first ranked response.
+     * Part of the recommendation cache key, so deploying a new model stops serving the old one's lists.
+     */
+    public String currentModelVersion() {
+        return lastModelVersion;
     }
 }

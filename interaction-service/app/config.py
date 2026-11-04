@@ -20,6 +20,8 @@ class Settings(BaseSettings):
 
     # Redis is optional: without it, recommendation-cache eviction is skipped.
     redis_url: str | None = None
+    # Must match the backend's recommendation.cache.generation-ttl.
+    recommendation_cache_generation_ttl_seconds: int = 24 * 60 * 60
 
     # Shared secret for service-to-service calls (/internal/*). Unset disables those routes.
     internal_api_token: str | None = None

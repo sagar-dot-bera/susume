@@ -31,16 +31,13 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
-      # Fail fast when Redis is unreachable so the cache error handler can fall back to computing results.
-      timeout: ${REDIS_TIMEOUT:2s}
-      connect-timeout: ${REDIS_CONNECT_TIMEOUT:2s}
+      # Fail fast when Redis is unreachable so the recommendation cache falls back to computing results.
+      timeout: ${REDIS_TIMEOUT:500ms}
+      connect-timeout: ${REDIS_CONNECT_TIMEOUT:1s}
       ssl:
         enabled: ${REDIS_SSL_ENABLED:false}
       repositories:
         enabled: false 
-
-  cache:
-    type: redis
 
   rabbitmq:
     addresses: ${RABBITMQ_URL:}
@@ -73,5 +70,25 @@ recommendation:
     enabled: ${RECOMMENDATION_ML_ENABLED:true}
     service-url: ${RECOMMENDATION_SERVICE_URL:http://localhost:8002}
     timeout-ms: ${RECOMMENDATION_ML_TIMEOUT_MS:500}
+  # Final recommendation lists cached in Redis; see docs/recommendation-cache.md.
+  cache:
+    enabled: ${RECOMMENDATION_CACHE_ENABLED:true}
+    # Keyed by the strategy that served the response.
+    ttl:
+      personalized_ml_reranked: 15m
+      personalized_cold_start_popularity: 5m
+      personalized: 1m
+      trending: 5m
+    default-ttl: 5m
+    ttl-jitter: 0.1
+    # Must outlive every entry TTL; interaction-service uses the same value.
+    generation-ttl: ${RECOMMENDATION_CACHE_GENERATION_TTL:24h}
+    failure-backoff: 30s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
 
 

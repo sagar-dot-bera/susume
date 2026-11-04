@@ -49,6 +49,7 @@ class RecommendationRankingClientTest {
         assertTrue(result.isPresent());
         assertEquals("item-1", result.get().getRecommendations().get(0).getItemId());
         assertEquals(0.95, result.get().getRecommendations().get(0).getScore());
+        assertEquals("v1", client.currentModelVersion());
     }
 
     @Test
@@ -63,6 +64,7 @@ class RecommendationRankingClientTest {
         Optional<RankResponse> result = client.rankCandidates(request);
 
         assertFalse(result.isPresent()); // Graceful fallback
+        assertEquals("none", client.currentModelVersion());
     }
 
     @Test
