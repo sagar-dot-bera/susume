@@ -1,73 +1,43 @@
-import re
 import uuid
 
-from app.cache import RedisRecommendationCache, escape_glob
+from app.cache import RedisRecommendationCache, user_generation_key
 
 TENANT = uuid.UUID("00000000-0000-0000-0000-00000000000a")
 
 
 class FakeRedis:
-    """Just enough of redis.asyncio.Redis: a dict with glob SCAN and DELETE."""
+    """Just enough of redis.asyncio.Redis: SET with an expiry."""
 
-    def __init__(self, keys: list[str], fail: bool = False):
-        self.store = dict.fromkeys(keys, b"{}")
+    def __init__(self, fail: bool = False):
+        self.store: dict[str, str] = {}
+        self.expiry: dict[str, int] = {}
         self.fail = fail
 
-    async def scan_iter(self, match: str, count: int):
+    async def set(self, key: str, value: str, ex: int | None = None) -> bool:
         if self.fail:
             raise ConnectionError("redis down")
-        regex = re.compile(_glob_to_regex(match))
-        for key in list(self.store):
-            if regex.fullmatch(key):
-                yield key
-
-    async def delete(self, *keys: str) -> int:
-        return sum(self.store.pop(k, None) is not None for k in keys)
+        self.store[key] = value
+        self.expiry[key] = ex
+        return True
 
 
-def _glob_to_regex(pattern: str) -> str:
-    out, i = [], 0
-    while i < len(pattern):
-        ch = pattern[i]
-        if ch == "\\":
-            i += 1
-            out.append(re.escape(pattern[i]))
-        elif ch == "*":
-            out.append(".*")
-        elif ch == "?":
-            out.append(".")
-        else:
-            out.append(re.escape(ch))
-        i += 1
-    return "".join(out)
+async def test_evict_replaces_the_users_generation_token():
+    redis = FakeRedis()
+    cache = RedisRecommendationCache(redis, generation_ttl_seconds=3600)
 
+    await cache.evict(TENANT, "user-1")
+    first = redis.store[f"reco:{{{TENANT}}}:user:user-1:gen"]
+    await cache.evict(TENANT, "user-1")
 
-async def test_evicts_every_limit_for_the_user_only():
-    redis = FakeRedis(
-        [
-            f"recommendation::{TENANT}:user-1:5",
-            f"recommendation::{TENANT}:user-1:20",
-            f"recommendation::{TENANT}:user-10:5",  # shares a prefix with user-1, must survive
-            f"recommendation::{TENANT}:user-2:5",
-        ]
-    )
-
-    await RedisRecommendationCache(redis).evict(TENANT, "user-1")
-
-    assert sorted(redis.store) == [f"recommendation::{TENANT}:user-10:5", f"recommendation::{TENANT}:user-2:5"]
-
-
-async def test_glob_characters_in_user_id_do_not_widen_the_match():
-    redis = FakeRedis([f"recommendation::{TENANT}:user-1:5", f"recommendation::{TENANT}:*:5"])
-
-    await RedisRecommendationCache(redis).evict(TENANT, "*")
-
-    assert list(redis.store) == [f"recommendation::{TENANT}:user-1:5"]
+    assert redis.store[f"reco:{{{TENANT}}}:user:user-1:gen"] != first
+    assert redis.expiry[f"reco:{{{TENANT}}}:user:user-1:gen"] == 3600
+    assert list(redis.store) == [f"reco:{{{TENANT}}}:user:user-1:gen"]
 
 
 async def test_redis_failure_is_swallowed():
-    await RedisRecommendationCache(FakeRedis([], fail=True)).evict(TENANT, "user-1")
+    await RedisRecommendationCache(FakeRedis(fail=True)).evict(TENANT, "user-1")
 
 
-def test_escape_glob():
-    assert escape_glob("a*b?c[d]e\\") == "a\\*b\\?c\\[d\\]e\\\\"
+def test_key_matches_backend_format():
+    # Same literal as RecommendationCacheTest.keyFormatMatchesInteractionService in the backend.
+    assert user_generation_key(TENANT, "user-1") == f"reco:{{{TENANT}}}:user:user-1:gen"

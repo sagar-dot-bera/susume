@@ -27,7 +27,11 @@ def create_app(
 
     engine = engine or create_async_engine(settings.sqlalchemy_url, pool_pre_ping=True)
     if cache is None:
-        cache = RedisRecommendationCache.from_url(settings.redis_url) if settings.redis_url else NoOpRecommendationCache()
+        cache = (
+            RedisRecommendationCache.from_url(settings.redis_url, settings.recommendation_cache_generation_ttl_seconds)
+            if settings.redis_url
+            else NoOpRecommendationCache()
+        )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:

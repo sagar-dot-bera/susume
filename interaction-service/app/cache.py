@@ -1,11 +1,13 @@
 import logging
-import re
+import secrets
 import uuid
 from typing import Protocol
 
 from redis.asyncio import Redis
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_GENERATION_TTL_SECONDS = 24 * 60 * 60
 
 
 class RecommendationCache(Protocol):
@@ -14,36 +16,39 @@ class RecommendationCache(Protocol):
     async def close(self) -> None: ...
 
 
-def escape_glob(value: str) -> str:
-    """Escape Redis glob metacharacters so a user id can't widen the pattern."""
-    return re.sub(r"([*?\[\]\\])", r"\\\1", value)
+def user_generation_key(tenant_id: uuid.UUID, external_user_id: str) -> str:
+    """Must match RecommendationCacheKeys.userGeneration in the backend."""
+    return f"reco:{{{tenant_id}}}:user:{external_user_id}:gen"
 
 
 class RedisRecommendationCache:
     """
-    Evicts a user's cached recommendations from the backend's Spring cache.
+    Invalidates a user's cached recommendations in the backend's cache.
 
-    Spring's RedisCacheManager stores entries as "<cacheName>::<key>", and the backend
-    keys the "recommendation" cache by "<tenantId>:<externalUserId>:<limit>", so every
-    limit cached for the user is deleted (same pattern as RecommendationCacheEvictor).
+    The backend includes a per-user generation token in every personalized cache key
+    (see backend RecommendationCacheKeys), so replacing the token makes all of the user's
+    cached lists unreachable in one write; they expire on their own TTL. The token is
+    random, and its TTL must outlive the backend's entry TTLs (same value as the backend's
+    recommendation.cache.generation-ttl).
     """
 
-    def __init__(self, redis: Redis):
+    def __init__(self, redis: Redis, generation_ttl_seconds: int = DEFAULT_GENERATION_TTL_SECONDS):
         self._redis = redis
+        self._generation_ttl_seconds = generation_ttl_seconds
 
     @classmethod
-    def from_url(cls, url: str) -> "RedisRecommendationCache":
-        return cls(Redis.from_url(url))
+    def from_url(
+        cls, url: str, generation_ttl_seconds: int = DEFAULT_GENERATION_TTL_SECONDS
+    ) -> "RedisRecommendationCache":
+        return cls(Redis.from_url(url), generation_ttl_seconds)
 
     async def evict(self, tenant_id: uuid.UUID, external_user_id: str) -> None:
-        pattern = f"recommendation::{escape_glob(f'{tenant_id}:{external_user_id}:')}*"
+        key = user_generation_key(tenant_id, external_user_id)
         try:
-            keys = [key async for key in self._redis.scan_iter(match=pattern, count=1000)]
-            if keys:
-                await self._redis.delete(*keys)
+            await self._redis.set(key, secrets.token_hex(8), ex=self._generation_ttl_seconds)
         except Exception:
-            # Stale entries expire on their own (15 min TTL); don't fail the write over it.
-            logger.warning("Failed to evict recommendation cache keys %s", pattern, exc_info=True)
+            # Stale entries expire on their own TTL; don't fail the write over it.
+            logger.warning("Failed to invalidate recommendation cache for %s", key, exc_info=True)
 
     async def close(self) -> None:
         await self._redis.aclose()

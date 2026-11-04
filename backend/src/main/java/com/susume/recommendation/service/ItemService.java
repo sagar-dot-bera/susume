@@ -1,5 +1,6 @@
 package com.susume.recommendation.service;
 
+import com.susume.recommendation.cache.RecommendationCache;
 import com.susume.recommendation.client.EmbeddingServiceClient;
 import com.susume.recommendation.dto.ItemCreatedEvent;
 import com.susume.recommendation.dto.ItemDetailResponse;
@@ -31,12 +32,14 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final EmbeddingServiceClient embeddingServiceClient;
     private final ItemEventPublisher itemEventPublisher;
+    private final RecommendationCache recommendationCache;
 
     public ItemService(ItemRepository itemRepository, EmbeddingServiceClient embeddingServiceClient,
-            ItemEventPublisher itemEventPublisher) {
+            ItemEventPublisher itemEventPublisher, RecommendationCache recommendationCache) {
         this.itemRepository = itemRepository;
         this.embeddingServiceClient = embeddingServiceClient;
         this.itemEventPublisher = itemEventPublisher;
+        this.recommendationCache = recommendationCache;
     }
 
     /**
@@ -66,6 +69,7 @@ public class ItemService {
 
         Item savedItem = itemRepository.save(item);
         log.info("Item created: {} for tenant: {}", savedItem.getId(), tenantId);
+        recommendationCache.invalidateTenant(tenantId);
 
         itemEventPublisher
                 .publish(new ItemCreatedEvent(savedItem.getId().toString(), savedItem.getTenantId().toString()));
@@ -103,7 +107,10 @@ public class ItemService {
         item.setEmbedding(embedding);
         item.setEmbeddingStatus(embeddingStatus);
 
-        return itemRepository.save(item);
+        Item saved = itemRepository.save(item);
+        // The item can now be found by similarity search.
+        recommendationCache.invalidateTenant(saved.getTenantId());
+        return saved;
     }
 
     /**
@@ -133,6 +140,7 @@ public class ItemService {
 
         Item updatedItem = itemRepository.save(item);
         log.info("Item updated: {} for tenant: {}", updatedItem.getId(), tenantId);
+        recommendationCache.invalidateTenant(tenantId);
 
         return updatedItem;
     }
@@ -148,6 +156,7 @@ public class ItemService {
         item.setStatus("INACTIVE");
         itemRepository.save(item);
         log.info("Item deleted (soft): {} for tenant: {}", item.getId(), tenantId);
+        recommendationCache.invalidateTenant(tenantId);
     }
 
     /**
