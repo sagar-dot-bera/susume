@@ -69,11 +69,69 @@ Collaborative filtering, content-based, frequently bought together, hybrid, pers
 
 ---
 
-## The ranking model
+## Recommendation caching
 
-`susume-ranker v2` is a LightGBM `LGBMRanker` (lambdarank) trained on the public [RetailRocket](https://www.kaggle.com/datasets/retailrocket/ecommerce-dataset) e-commerce dataset. It uses graded labels (view 1, cart 2, purchase 3) and a time-based train/val/test split. It takes 35 features: 10 strategy scores, plus user, item, user-item and context signals.
+The backend caches the final recommendation response in Redis or Valkey, after candidate generation, ML re-ranking, inactive-item filtering, and the `limit` cut. This keeps repeated requests fast without caching an incomplete intermediate result.
 
-Offline test results, per query, k = 10 ([full report](recommendation-service/models/susume_ranker_v2_report.md)):
+- `GET /api/v1/recommendations` is cached per tenant, user, limit, model version, and cache-generation tokens.
+- `GET /api/v1/recommendations/trending` is cached per tenant, limit, days, and the tenant generation.
+- Admin recommendation previews are never cached, so they always show a fresh result.
+
+### Cache freshness and tenant isolation
+
+Every key starts with the authenticated tenant ID. Authorization runs before the cache is read, and the tenant ID is taken from the API key rather than the request body. A model version is also part of personalized recommendation keys, so deploying a new ranker does not serve lists produced by the previous model.
+
+Cache entries use strategy-specific, jittered TTLs:
+
+| Response path | TTL | Reason |
+|---|---:|---|
+| ML-ranked personalized recommendations | 15 minutes | User interactions invalidate the user's generation immediately |
+| Cold-start popularity | 5 minutes | Tenant popularity changes over time |
+| Degraded strategy-order fallback | 1 minute | The service retries ML ranking soon |
+| Trending recommendations | 5 minutes | Shared tenant-wide result with a short freshness window |
+
+Interactions bump the user's generation. Item changes and completed embeddings bump the tenant generation. Invalidation changes the generation token instead of scanning and deleting Redis keys; old entries expire naturally. This also prevents a request that was already computing during a write from restoring stale data.
+
+### Reliability and monitoring
+
+Concurrent misses for the same key are coalesced within a backend instance, so only one request computes the recommendation while the others wait for the same result. If Redis is unavailable, the backend computes and serves the recommendation normally, temporarily bypassing Redis instead of making every request wait on a timeout. Computation errors are never cached.
+
+Cache behavior can be disabled with `RECOMMENDATION_CACHE_ENABLED=false`. Cache hit rate, latency, coalescing, invalidation, and Redis errors are exposed through the protected `/actuator/metrics` endpoints. See [`docs/recommendation-cache.md`](docs/recommendation-cache.md) for key formats, configuration, and the complete failure model.
+
+---
+
+## The trained ranking model
+
+Susume uses a two-stage recommendation pipeline:
+
+1. The backend runs ten candidate-generation strategies and creates a shortlist.
+2. `susume-ranker v2` re-orders that shortlist for the current user.
+
+The ranker is a LightGBM [`LGBMRanker`](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRanker.html) using the LambdaMART objective. It does not generate new items. Instead, it learns which candidates should appear first based on the signals already available from the candidate strategies, the user, the item, the user-item history, and the request context.
+
+### How the model is trained
+
+The offline training pipeline uses the public [RetailRocket e-commerce dataset](https://www.kaggle.com/datasets/retailrocket/ecommerce-dataset):
+
+1. Historical events are ordered by time and divided into contiguous train, validation, and test periods. The test period is always later than the training period, which better represents how the model is used in production.
+2. A training query represents a user at a point in time. The pipeline builds the same candidate pool and feature row that the serving endpoint would build at that point.
+3. Items the user engages with during the following 24 hours become graded labels: views are worth 1, carts 2, and purchases 3. Items not engaged with receive a zero label.
+4. LightGBM learns to rank the candidates within each query. Early stopping selects the best iteration on the validation period.
+5. The pipeline evaluates the ranker against simple strategy baselines and saves the model only when it beats the best baseline, unless `--force` is supplied.
+
+The model receives 35 features:
+
+| Feature group | What it represents |
+|---|---|
+| Strategy scores (10) | The scores from the candidate generators, such as popularity, collaborative filtering, personalized, similar items, and trending |
+| User signals (8) | Total and recent views, clicks, likes, purchases, carts, and interactions |
+| Item signals (6) | Item popularity, recent engagement, and item age |
+| User-item signals (6) | The user's previous interactions with the item and time since the last interaction |
+| Context signals (3) | Recommendation surface, hour of day, and day of week |
+
+### Offline results
+
+The current model's offline test results, measured per query at k = 10, are below ([full report](recommendation-service/models/susume_ranker_v2_report.md)):
 
 | Model | NDCG@10 | Recall@10 | HitRate@10 |
 |---|---|---|---|
@@ -84,11 +142,21 @@ Offline test results, per query, k = 10 ([full report](recommendation-service/mo
 | Logistic regression | 0.222 | 0.281 | 0.368 |
 | **LightGBM LambdaMART** | **0.260** | **0.325** | **0.417** |
 
-Candidate recall is 0.366. This is the share of engaged items that the generators surface at all, so no re-ranker can score above it.
+Candidate recall is 0.366. This is the share of engaged items surfaced by the candidate generators, so it is an upper bound for every re-ranker: the model cannot rank an item that was never included in the shortlist.
 
-**Training/serving parity.** All feature code lives in [`recommendation-service/app/features/`](recommendation-service/app/features). Both `training/build_dataset.py` and the `/rank` endpoint call it, and the backend sends no feature values. [`tests/test_serving_parity.py`](recommendation-service/tests/test_serving_parity.py) runs random event logs through both paths and checks that the feature rows are identical.
+### How the trained artifact is used
 
-**Caveat:** the model was trained on RetailRocket, not on your tenants' data. Impressions are logged for every response, so you can compare `personalized_ml_reranked` against the strategy order on live traffic.
+Training and serving share the same feature implementation in [`recommendation-service/app/features/`](recommendation-service/app/features). The `/rank` endpoint computes the features from the user's recent events and the tenant snapshot; the backend does not send precomputed feature values. [`tests/test_serving_parity.py`](recommendation-service/tests/test_serving_parity.py) verifies that the training and serving paths produce identical feature rows.
+
+The training command writes three artifacts:
+
+- `models/susume_ranker_v2.joblib` — the LightGBM model used for scoring
+- `models/susume_ranker_v2_meta.json` — feature names, feature version, parameters, dataset periods, and metrics
+- `models/susume_ranker_v2_report.md` — the human-readable evaluation report
+
+The recommendation service loads the joblib model and uses the metadata to validate the feature version and model configuration. If the model is unavailable, still warming up, or exceeds the 500 ms ranking budget, the backend keeps the strategy order instead of failing the recommendation request.
+
+**Important:** the shipped model was trained on RetailRocket, not on your tenants' data. Every response logs impressions, so you can compare `personalized_ml_reranked` with the strategy order on live traffic before retraining on tenant-specific data.
 
 More detail:
 - [docs/ml-ranking-serving.md](docs/ml-ranking-serving.md): request flow, fallbacks, configuration
